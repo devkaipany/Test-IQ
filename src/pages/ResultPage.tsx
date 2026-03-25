@@ -348,30 +348,22 @@ export default function ResultPage() {
           <div className="answer-table-wrap">
             <table className="answer-table">
               <thead>
-                <tr><th>#</th><th>Phần</th><th>Độ khó</th><th>Đã chọn</th><th>Đáp án</th><th>Kết quả</th></tr>
+                <tr><th>#</th><th>Phần</th><th>Đã chọn</th><th>Kết quả</th></tr>
               </thead>
               <tbody>
                 {QUESTIONS.map(q => {
                   const chosen = answers[q.id] ?? null;
                   const isCorrect = chosen === q.correct;
                   const isSkipped = chosen === null;
-                  const diffLabels = ["", "Dễ", "TB", "Khó"];
-                  const diffColors = ["", "#10b981", "#f59e0b", "#ef4444"];
                   return (
                     <tr key={q.id}>
                       <td style={{ fontWeight: 700, color: "var(--accent)" }}>{q.id}</td>
                       <td style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>{q.section}</td>
-                      <td>
-                        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: diffColors[q.difficulty], background: diffColors[q.difficulty] + "22", padding: "2px 8px", borderRadius: 100 }}>
-                          {diffLabels[q.difficulty]}
-                        </span>
-                      </td>
                       <td style={{ fontWeight: 600 }}>{chosen ?? "—"}</td>
-                      <td style={{ fontWeight: 700, color: "var(--success)" }}>{q.correct}</td>
                       <td>
                         {isSkipped ? <span className="tag-skipped">— Bỏ qua</span>
                           : isCorrect ? <span className="tag-correct">✓ Đúng</span>
-                            : <span className="tag-wrong">✗ Sai</span>}
+                          : <span className="tag-wrong">✗ Sai</span>}
                       </td>
                     </tr>
                   );
