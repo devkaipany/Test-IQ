@@ -28,7 +28,10 @@ export default function TopBar() {
 
   return (
     <div className="topbar">
-      <span className="topbar-brand">📐 Toán Logic</span>
+      <span className="topbar-brand">
+        <span className="brand-kai">KAI</span><span className="brand-pany">pany</span>
+      </span>
+
 
       <div className="topbar-progress topbar-progress-desktop">
         <div className="topbar-progress-text">{answered}/{QUESTION_COUNT}</div>

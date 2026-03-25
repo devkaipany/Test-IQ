@@ -23,8 +23,11 @@ export default function StartPage() {
   return (
     <div className="start-page">
       <div className="start-card">
-        <div className="start-badge">Bài kiểm tra · 40 câu</div>
-        <h1 className="start-title">Toán Logic</h1>
+        <div className="start-badge">KAIpany · Kiểm tra năng lực</div>
+        <h1 className="start-title">
+          <span style={{ color: "#7c3aed", fontStyle: "italic" }}>KAI</span><span style={{ color: "#22c55e", fontStyle: "italic" }}>pany</span>
+          <span style={{ fontSize: "1.6rem", color: "var(--text-dim)", fontStyle: "normal" }}> Toán Logic</span>
+        </h1>
         <p className="start-subtitle">
           Kiểm tra tư duy logic qua 40 câu hỏi đa dạng: dãy số, suy luận,
           đố tư duy, toán hình và toán thực tế.
