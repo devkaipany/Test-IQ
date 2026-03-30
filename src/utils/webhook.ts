@@ -37,6 +37,9 @@ export interface QuizResultPayload {
   ho_ten: string;
   so_dien_thoai: string;
   email: string;
+  stk: string;
+  ten_ngan_hang: string;
+  ten_tai_khoan: string;
   so_diem: string;
   iq_uoc_tinh: number;
   danh_gia_ai: string;

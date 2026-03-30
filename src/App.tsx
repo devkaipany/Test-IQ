@@ -4,10 +4,12 @@ import StartPage from "./pages/StartPage";
 import QuestionPage from "./pages/QuestionPage";
 import ResultPage from "./pages/ResultPage";
 import InfoPage from "./pages/InfoPage";
+import AdminPage from "./pages/AdminPage";
 
 type Route =
   | { name: "start" }
   | { name: "info" }
+  | { name: "admin" }
   | { name: "question"; id: number }
   | { name: "result" };
 
@@ -16,6 +18,7 @@ function parseHash(hash: string): Route {
   if (h === "" || h === "start") return { name: "start" };
   if (h === "result") return { name: "result" };
   if (h === "info") return { name: "info" };
+  if (h === "admin") return { name: "admin" };
   const m = h.match(/^q\/(\d+)$/);
   if (m) {
     const id = parseInt(m[1]);
@@ -41,6 +44,7 @@ function Router() {
 
   if (route.name === "result") return <ResultPage />;
   if (route.name === "info") return <InfoPage />;
+  if (route.name === "admin") return <AdminPage />;
   if (route.name === "question") return <QuestionPage questionId={route.id} />;
   return <StartPage />;
 }

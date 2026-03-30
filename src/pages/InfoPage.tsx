@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { useQuiz } from "../context/QuizContext";
 import type { UserInfo } from "../context/QuizContext";
+import { isAdmin } from "../context/QuizContext";
 import { navigate } from "../App";
+
+const BANKS = [
+  "Vietcombank", "BIDV", "Agribank", "Techcombank", "MB Bank",
+  "VPBank", "ACB", "SHB", "HDBank", "TPBank", "Sacombank",
+  "VietinBank", "Eximbank", "OCB", "MSB", "SeABank", "Khác",
+];
 
 function validatePhone(v: string) {
   return /^[0-9]{9,11}$/.test(v.replace(/\s/g, ""));
@@ -10,31 +17,41 @@ function validateEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
+type FormFields = keyof UserInfo;
+type FormErrors = Partial<Record<FormFields, string>>;
+
 export default function InfoPage() {
   const { saveUserInfo, userInfo } = useQuiz();
 
   const [form, setForm] = useState<UserInfo>({
-    name: userInfo?.name ?? "",
-    phone: userInfo?.phone ?? "",
-    email: userInfo?.email ?? "",
+    name:         userInfo?.name         ?? "",
+    phone:        userInfo?.phone        ?? "",
+    email:        userInfo?.email        ?? "",
+    bank_number:  userInfo?.bank_number  ?? "",
+    bank_name:    userInfo?.bank_name    ?? "",
+    account_name: userInfo?.account_name ?? "",
   });
-  const [errors, setErrors] = useState<Partial<UserInfo>>({});
-  const [touched, setTouched] = useState<Partial<Record<keyof UserInfo, boolean>>>({});
+  const [errors, setErrors]   = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Partial<Record<FormFields, boolean>>>({});
 
-  function validate(f: UserInfo) {
-    const e: Partial<UserInfo> = {};
-    if (!f.name.trim()) e.name = "Vui lòng nhập họ tên";
-    if (!validatePhone(f.phone)) e.phone = "Số điện thoại không hợp lệ (9–11 chữ số)";
-    if (!validateEmail(f.email)) e.email = "Email không hợp lệ";
+  function validate(f: UserInfo): FormErrors {
+    const e: FormErrors = {};
+    if (!f.name.trim())          e.name         = "Vui lòng nhập họ tên";
+    if (!validatePhone(f.phone)) e.phone        = "Số điện thoại không hợp lệ (9–11 chữ số)";
+    if (!validateEmail(f.email)) e.email        = "Email không hợp lệ";
+    if (!f.bank_number.trim() || !/^\d{6,20}$/.test(f.bank_number.trim()))
+                                  e.bank_number  = "STK phải là số (6–20 chữ số)";
+    if (!f.bank_name.trim())     e.bank_name    = "Vui lòng chọn ngân hàng";
+    if (!f.account_name.trim())  e.account_name = "Vui lòng nhập tên chủ tài khoản";
     return e;
   }
 
-  function handleBlur(field: keyof UserInfo) {
+  function handleBlur(field: FormFields) {
     setTouched(t => ({ ...t, [field]: true }));
     setErrors(validate(form));
   }
 
-  function handleChange(field: keyof UserInfo, value: string) {
+  function handleChange(field: FormFields, value: string) {
     const updated = { ...form, [field]: value };
     setForm(updated);
     if (touched[field]) setErrors(validate(updated));
@@ -42,15 +59,32 @@ export default function InfoPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const allTouched = { name: true, phone: true, email: true };
+    const allTouched: Partial<Record<FormFields, boolean>> = {
+      name: true, phone: true, email: true,
+      bank_number: true, bank_name: true, account_name: true,
+    };
     setTouched(allTouched);
     const errs = validate(form);
     setErrors(errs);
     if (Object.keys(errs).length === 0) {
       saveUserInfo(form);
-      navigate("");
+      navigate(isAdmin(form.email) ? "admin" : "");
     }
   }
+
+  const field = (
+    f: FormFields,
+    label: string,
+    el: React.ReactNode,
+  ) => (
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      {el}
+      {touched[f] && errors[f] && (
+        <span className="form-error">{errors[f]}</span>
+      )}
+    </div>
+  );
 
   return (
     <div className="info-page">
@@ -64,66 +98,62 @@ export default function InfoPage() {
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="form-group">
-            <label className="form-label" htmlFor="info-name">
-              👤 Họ tên <span className="req">*</span>
-            </label>
-            <input
-              id="info-name"
-              className={`form-input${touched.name && errors.name ? " error" : ""}`}
-              type="text"
-              placeholder="Nguyễn Văn A"
-              value={form.name}
+          {/* ── Thông tin cá nhân ── */}
+          <div className="form-section-title">👤 Thông tin cá nhân</div>
+
+          {field("name", "Họ tên *",
+            <input id="info-name" className={`form-input${touched.name && errors.name ? " error" : ""}`}
+              type="text" placeholder="Nguyễn Văn A" value={form.name}
               onChange={e => handleChange("name", e.target.value)}
-              onBlur={() => handleBlur("name")}
-              autoComplete="name"
-            />
-            {touched.name && errors.name && (
-              <span className="form-error">{errors.name}</span>
-            )}
-          </div>
+              onBlur={() => handleBlur("name")} autoComplete="name" />
+          )}
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="info-phone">
-              📱 Số điện thoại <span className="req">*</span>
-            </label>
-            <input
-              id="info-phone"
-              className={`form-input${touched.phone && errors.phone ? " error" : ""}`}
-              type="tel"
-              placeholder="0912345678"
-              value={form.phone}
+          {field("phone", "📱 Số điện thoại *",
+            <input id="info-phone" className={`form-input${touched.phone && errors.phone ? " error" : ""}`}
+              type="tel" placeholder="0912345678" value={form.phone}
               onChange={e => handleChange("phone", e.target.value)}
-              onBlur={() => handleBlur("phone")}
-              autoComplete="tel"
-              inputMode="tel"
-            />
-            {touched.phone && errors.phone && (
-              <span className="form-error">{errors.phone}</span>
-            )}
-          </div>
+              onBlur={() => handleBlur("phone")} autoComplete="tel" inputMode="tel" />
+          )}
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="info-email">
-              ✉️ Email <span className="req">*</span>
-            </label>
-            <input
-              id="info-email"
-              className={`form-input${touched.email && errors.email ? " error" : ""}`}
-              type="email"
-              placeholder="example@email.com"
-              value={form.email}
+          {field("email", "✉️ Email *",
+            <input id="info-email" className={`form-input${touched.email && errors.email ? " error" : ""}`}
+              type="email" placeholder="example@email.com" value={form.email}
               onChange={e => handleChange("email", e.target.value)}
-              onBlur={() => handleBlur("email")}
-              autoComplete="email"
-              inputMode="email"
-            />
-            {touched.email && errors.email && (
-              <span className="form-error">{errors.email}</span>
-            )}
-          </div>
+              onBlur={() => handleBlur("email")} autoComplete="email" inputMode="email" />
+          )}
 
-          <button type="submit" className="btn btn-primary btn-full">
+          {/* ── Thông tin ngân hàng ── */}
+          <div className="form-section-title" style={{ marginTop: "1.25rem" }}>🏦 Thông tin ngân hàng</div>
+
+          {field("bank_name", "Ngân hàng *",
+            <select id="info-bank-name"
+              className={`form-input${touched.bank_name && errors.bank_name ? " error" : ""}`}
+              value={form.bank_name}
+              onChange={e => handleChange("bank_name", e.target.value)}
+              onBlur={() => handleBlur("bank_name")}
+            >
+              <option value="">-- Chọn ngân hàng --</option>
+              {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          )}
+
+          {field("account_name", "Tên chủ tài khoản *",
+            <input id="info-account-name"
+              className={`form-input${touched.account_name && errors.account_name ? " error" : ""}`}
+              type="text" placeholder="NGUYEN VAN A (in hoa)" value={form.account_name}
+              onChange={e => handleChange("account_name", e.target.value.toUpperCase())}
+              onBlur={() => handleBlur("account_name")} autoComplete="off" />
+          )}
+
+          {field("bank_number", "Số tài khoản *",
+            <input id="info-bank-number"
+              className={`form-input${touched.bank_number && errors.bank_number ? " error" : ""}`}
+              type="text" placeholder="1234567890" value={form.bank_number} inputMode="numeric"
+              onChange={e => handleChange("bank_number", e.target.value.replace(/\D/g, ""))}
+              onBlur={() => handleBlur("bank_number")} autoComplete="off" />
+          )}
+
+          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: "1.5rem" }}>
             Tiếp tục →
           </button>
         </form>

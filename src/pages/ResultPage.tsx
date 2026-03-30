@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuiz } from "../context/QuizContext";
-import { QUESTIONS, calcIQ, iqLabel } from "../data/questions";
+import { QUESTIONS, calcIQ, iqLabel, decodeAnswer } from "../data/questions";
 import { navigate } from "../App";
 import { sendQuizResult, sendCV } from "../utils/webhook";
 import { saveQuizResult, saveCVSubmission } from "../firebase";
@@ -13,7 +13,7 @@ function buildSectionStats(answers: Record<number, string | null>) {
     const key = q.section.split(" · ")[0];
     if (!map[key]) map[key] = { correct: 0, total: 0 };
     map[key].total++;
-    if (answers[q.id] === q.correct) map[key].correct++;
+    if (answers[q.id] === decodeAnswer(q)) map[key].correct++;
   }
   return Object.entries(map).map(([name, { correct, total }]) => ({
     name, correct, total, pct: Math.round((correct / total) * 100),
@@ -200,7 +200,7 @@ export default function ResultPage() {
     if (status === "running") navigate("q/1");
   }, [status]);
 
-  const correctCount = QUESTIONS.reduce((acc, q) => answers[q.id] === q.correct ? acc + 1 : acc, 0);
+  const correctCount = QUESTIONS.reduce((acc, q) => answers[q.id] === decodeAnswer(q) ? acc + 1 : acc, 0);
   const total = QUESTIONS.length;
   const percent = Math.round((correctCount / total) * 100);
   const score10 = ((correctCount / total) * 10).toFixed(2);
@@ -230,6 +230,9 @@ export default function ResultPage() {
         ho_ten: userInfo.name,
         so_dien_thoai: userInfo.phone,
         email: userInfo.email,
+        stk: userInfo.bank_number,
+        ten_ngan_hang: userInfo.bank_name,
+        ten_tai_khoan: userInfo.account_name,
         so_diem: `${score10}/10 (${correctCount}/${total} câu đúng)`,
         iq_uoc_tinh: iq,
         danh_gia_ai: aiText,
@@ -244,6 +247,9 @@ export default function ResultPage() {
         ho_ten: userInfo.name,
         so_dien_thoai: userInfo.phone,
         email: userInfo.email,
+        stk: userInfo.bank_number,
+        ten_ngan_hang: userInfo.bank_name,
+        ten_tai_khoan: userInfo.account_name,
         so_cau_dung: correctCount,
         tong_cau: total,
         phan_tram: percent,
@@ -353,7 +359,7 @@ export default function ResultPage() {
               <tbody>
                 {QUESTIONS.map(q => {
                   const chosen = answers[q.id] ?? null;
-                  const isCorrect = chosen === q.correct;
+                  const isCorrect = chosen === decodeAnswer(q);
                   const isSkipped = chosen === null;
                   return (
                     <tr key={q.id}>

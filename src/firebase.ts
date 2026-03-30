@@ -25,13 +25,16 @@ export interface QuizResultDoc {
   ho_ten: string;
   so_dien_thoai: string;
   email: string;
+  stk: string;
+  ten_ngan_hang: string;
+  ten_tai_khoan: string;
   so_cau_dung: number;
   tong_cau: number;
   phan_tram: number;
   diem_10: string;
   iq_uoc_tinh: number;
   danh_gia_ai: string;
-  question_order: number[];       // shuffled order stored for audit
+  question_order: number[];
   answers: Record<string, string>;
   submitted_at: ReturnType<typeof serverTimestamp>;
 }

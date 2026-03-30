@@ -13,6 +13,17 @@ export interface UserInfo {
   name: string;
   phone: string;
   email: string;
+  /** Số tài khoản ngân hàng */
+  bank_number: string;
+  /** Tên ngân hàng */
+  bank_name: string;
+  /** Tên chủ tài khoản */
+  account_name: string;
+}
+
+export const ADMIN_EMAIL = "natsu8621@gmail.com";
+export function isAdmin(email?: string) {
+  return email?.toLowerCase().trim() === ADMIN_EMAIL;
 }
 
 export type QuizStatus = "idle" | "running" | "submitted";
