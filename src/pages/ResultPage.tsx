@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useQuiz } from "../context/QuizContext";
 import { QUESTIONS, calcIQ, iqLabel, decodeAnswer } from "../data/questions";
 import { navigate } from "../App";
-import { sendQuizResult, sendCV } from "../utils/webhook";
-import { saveQuizResult, saveCVSubmission } from "../firebase";
+import { sendQuizResult } from "../utils/webhook";
+import { saveQuizResult } from "../firebase";
 
 // ── AI Evaluation Engine ──────────────────────────────────────────────────────
 
@@ -55,136 +55,9 @@ function generateAIFeedback(answers: Record<number, string | null>, correctCount
   return lines;
 }
 
-// ── CV Modal (link + ảnh URL + SĐT) ─────────────────────────────────────────
+// ── CV Link ───────────────────────────────────────────────────────────────────
 
-interface CVModalProps {
-  userInfo: { name: string; phone: string; email: string } | null;
-  onClose: () => void;
-}
-
-function CVModal({ userInfo, onClose }: CVModalProps) {
-  const [phone, setPhone] = useState(userInfo?.phone ?? "");
-  const [link, setLink] = useState("");
-  const [imgBase64, setImgBase64] = useState<string | null>(null);
-  const [imgName, setImgName] = useState("");
-  const [note, setNote] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
-  const imgInputRef = useRef<HTMLInputElement>(null);
-
-  function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImgName(file.name);
-    const reader = new FileReader();
-    reader.onload = () => setImgBase64(reader.result as string);
-    reader.readAsDataURL(file);
-  }
-
-  async function handleSend() {
-    if (!link.trim()) return;
-    setStatus("sending");
-    const payload = {
-      ho_ten: userInfo?.name ?? "",
-      so_dien_thoai: phone,
-      email: userInfo?.email ?? "",
-      link_cv: link,
-      anh_url: imgBase64 ?? undefined,
-      ghi_chu: note || undefined,
-    };
-    const [ok] = await Promise.all([
-      sendCV(payload),
-      saveCVSubmission(payload),
-    ]);
-    setStatus(ok ? "ok" : "error");
-  }
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div>
-            <div className="modal-title">📎 Nộp CV cho KAIpany</div>
-            <div className="modal-sub">Điền link CV và ảnh đại diện của bạn</div>
-          </div>
-          <button className="btn-icon-ghost modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        {status === "ok" ? (
-          <div className="modal-success">
-            <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🎉</div>
-            <div style={{ fontWeight: 700, fontSize: "1.05rem", marginBottom: 6 }}>CV đã được gửi!</div>
-            <div style={{ color: "var(--text-muted)", fontSize: "0.88rem" }}>KAIpany sẽ liên hệ qua SĐT hoặc email đã đăng ký.</div>
-            <button className="btn btn-primary" style={{ marginTop: 20 }} onClick={onClose}>Đóng</button>
-          </div>
-        ) : (
-          <>
-            <div className="modal-body">
-              {/* Avatar preview */}
-              {imgBase64 && (
-                <div style={{ textAlign: "center", marginBottom: 16 }}>
-                  <img src={imgBase64} alt="Ảnh đại diện"
-                    style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", border: "3px solid var(--accent)" }} />
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label">📱 Số điện thoại <span className="req">*</span></label>
-                <input className="form-input" type="tel" inputMode="tel" placeholder="0912345678"
-                  value={phone} onChange={e => setPhone(e.target.value)} />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">🔗 Link CV <span className="req">*</span></label>
-                <input className="form-input" type="url"
-                  placeholder="Google Drive, LinkedIn, Notion, GitHub..."
-                  value={link} onChange={e => setLink(e.target.value)} />
-              </div>
-
-              {/* Image file upload */}
-              <div className="form-group">
-                <label className="form-label">🖼️ Ảnh đại diện (tùy chọn)</label>
-                <input ref={imgInputRef} type="file" accept="image/*"
-                  style={{ display: "none" }} onChange={handleImageFile} />
-                <div
-                  className={`file-drop${imgBase64 ? " has-file" : ""}`}
-                  onClick={() => imgInputRef.current?.click()}
-                >
-                  {imgBase64 ? (
-                    <>
-                      <div style={{ fontSize: "1.5rem" }}>✅</div>
-                      <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--success)" }}>{imgName}</div>
-                      <div style={{ fontSize: "0.73rem", color: "var(--text-muted)" }}>Nhấn để đổi ảnh</div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: "1.8rem" }}>📷</div>
-                      <div style={{ fontWeight: 600, color: "var(--text-dim)" }}>Nhấn để chọn ảnh</div>
-                      <div style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>JPG, PNG, WEBP</div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">💬 Lời nhắn</label>
-                <textarea className="form-input" rows={2} placeholder="Lời nhắn thêm cho KAIpany..."
-                  value={note} onChange={e => setNote(e.target.value)} style={{ resize: "none" }} />
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              {status === "error" && <span style={{ color: "var(--danger)", fontSize: "0.82rem" }}>⚠️ Gửi thất bại.</span>}
-              <button className="btn btn-ghost" onClick={onClose} disabled={status === "sending"}>Huỷ</button>
-              <button className="btn btn-primary" onClick={handleSend} disabled={!link.trim() || status === "sending"}>
-                {status === "sending" ? "⏳ Đang gửi..." : "📤 Gửi CV"}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+const CV_LINK = "https://kai-pany.sg.larksuite.com/wiki/JcZ5wlBari6LnZkL7nvlQxb0grb";
 
 
 // ── Result Page ────────────────────────────────────────────────────────────────
@@ -193,7 +66,7 @@ export default function ResultPage() {
   const { status, answers, userInfo, clearQuiz, questionOrder } = useQuiz();
   const sentRef = useRef(false);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
-  const [showCVModal, setShowCVModal] = useState(false);
+
 
   useEffect(() => {
     if (status === "idle") navigate("");
@@ -269,7 +142,7 @@ export default function ResultPage() {
 
   return (
     <>
-      {showCVModal && <CVModal userInfo={userInfo} onClose={() => setShowCVModal(false)} />}
+
       <div className="result-page">
         <div className="result-content">
           {/* Hero */}
@@ -369,7 +242,7 @@ export default function ResultPage() {
                       <td>
                         {isSkipped ? <span className="tag-skipped">— Bỏ qua</span>
                           : isCorrect ? <span className="tag-correct">✓ Đúng</span>
-                          : <span className="tag-wrong">✗ Sai</span>}
+                            : <span className="tag-wrong">✗ Sai</span>}
                       </td>
                     </tr>
                   );
@@ -380,7 +253,7 @@ export default function ResultPage() {
 
           {/* Actions */}
           <div className="result-actions">
-            <button className="btn btn-cv" onClick={() => setShowCVModal(true)}>📎 Nộp CV cho KAIpany</button>
+            <a className="btn btn-cv" href={CV_LINK} target="_blank" rel="noopener noreferrer">📎 Nộp CV cho KAIpany</a>
             <button className="btn btn-primary" onClick={handleRestart}>🔄 Làm lại</button>
           </div>
 
