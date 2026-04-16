@@ -28,8 +28,10 @@ export default function QuestionPage({ questionId: pos }: Props) {
   if (!question) return null;
 
   const selected = answers[actualId] ?? null;
-  const isFigure = question.hasFigure === true;
-  const isLast = pos === 40;
+  const isFigure  = question.hasFigure === true;
+  const isImage   = !!question.imageQuestion;  // câu ảnh ngoài
+  const isVisual  = isFigure || isImage;        // hiển thị dạng có hình (layout lưới 3 cột)
+  const isLast    = pos === 40;
   const totalAnswered = Object.values(answers).filter(v => v !== null).length;
 
   function handleSelect(key: OptionKey) {
@@ -101,10 +103,30 @@ export default function QuestionPage({ questionId: pos }: Props) {
         {/* Question title */}
         <div className="question-title">{question.title}</div>
 
-        {/* Figure */}
-        {isFigure && (
+        {/* Figure — SVG (hasFigure) */}
+        {isFigure && !isImage && (
           <div className="figure-area">
             <GeometryFigure questionId={question.id} variant="main" />
+          </div>
+        )}
+
+        {/* Figure — Ảnh ngoài (imageQuestion) */}
+        {isImage && (
+          <div className="figure-area">
+            <img
+              src={question.imageQuestion}
+              alt="Đề bài"
+              style={{
+                maxWidth: "100%",
+                maxHeight: 420,
+                objectFit: "contain",
+                borderRadius: 16,
+                background: "white",
+                padding: 8,
+                display: "block",
+                margin: "0 auto",
+              }}
+            />
           </div>
         )}
 
@@ -115,22 +137,51 @@ export default function QuestionPage({ questionId: pos }: Props) {
         {/* Answer cards */}
         <div
           className="options-grid"
-          style={isFigure ? { gridTemplateColumns: "repeat(3, 1fr)" } : undefined}
+          style={isVisual ? { gridTemplateColumns: "repeat(3, 1fr)" } : undefined}
         >
           {OPTION_KEYS.map(key => {
             const isSelected = selected === key;
             return (
               <div
                 key={key}
-                className={`option-card${isFigure ? " figure-card" : ""}${isSelected ? " selected" : ""}`}
+                className={`option-card${
+                  isFigure ? " figure-card" : ""
+                }${isImage ? " figure-card" : ""}${isSelected ? " selected" : ""}`}
                 onClick={() => handleSelect(key)}
               >
-                {isFigure ? (
+                {/* SVG option */}
+                {isFigure && !isImage && (
                   <>
                     <div className="option-badge">{key}</div>
                     <GeometryOption questionId={question.id} optionKey={key as GeoKey} />
                   </>
-                ) : (
+                )}
+
+                {/* Ảnh ngoài option */}
+                {isImage && (
+                  <>
+                    <div className="option-badge">{key}</div>
+                    {question.imageOptions?.[key] ? (
+                      <img
+                        src={question.imageOptions[key]}
+                        alt={`Đáp án ${key}`}
+                        style={{
+                          width: "100%",
+                          maxHeight: 120,
+                          objectFit: "contain",
+                          borderRadius: 10,
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: "0.9rem", textAlign: "center" }}>
+                        {question.options[key]}
+                      </span>
+                    )}
+                  </>
+                )}
+
+                {/* Text option */}
+                {!isFigure && !isImage && (
                   <>
                     <span className="option-badge">{key}</span>
                     {question.options[key]}

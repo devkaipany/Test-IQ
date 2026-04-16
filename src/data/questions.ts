@@ -9,6 +9,21 @@ export interface QuizQuestion {
   _c: string;
   hasFigure?: boolean;
   difficulty: 1 | 2 | 3; // 1=dễ, 2=trung bình, 3=khó
+
+  /**
+   * Câu hỏi dạng ẢNH — thay thế cho hasFigure/SVG.
+   * Đặt đường dẫn ảnh chính (hiển thị đề bài) tại đây.
+   * Ảnh nên để trong thư mục: src/assets/questions/
+   * Ví dụ: imageQuestion: new URL('../assets/questions/q42_main.png', import.meta.url).href
+   */
+  imageQuestion?: string;
+
+  /**
+   * Ảnh cho từng đáp án A–F (tuỳ chọn).
+   * Nếu không có imageOptions, đáp án sẽ hiển thị dạng text bình thường.
+   * Ví dụ: { A: urlA, B: urlB, C: urlC, D: urlD, E: urlE, F: urlF }
+   */
+  imageOptions?: Partial<Record<OptionKey, string>>;
 }
 
 export const QUIZ_DURATION_MINUTES = 30;
@@ -70,6 +85,41 @@ export const QUESTIONS: QuizQuestion[] = [
   { id: 38, section: "Toán Thực tế", title: "Quãng đường 72km: 30km đầu đi 40km/h, còn lại đi 48km/h. Thời gian đi hết (làm tròn 5 phút gần nhất) là:",             options: { A: "1 giờ 30 phút", B: "1 giờ 35 phút", C: "1 giờ 40 phút", D: "1 giờ 45 phút", E: "1 giờ 50 phút", F: "2 giờ" }, _c: "G", difficulty: 2 },
   { id: 39, section: "Toán Thực tế", title: "Chia thưởng 18.000.000đ theo tỉ lệ 2 : 3 : 4. Nhóm nhận nhiều nhất được:",                                              options: { A: "6.000.000đ", B: "7.200.000đ", C: "8.000.000đ", D: "8.100.000đ", E: "9.000.000đ", F: "10.000.000đ" }, _c: "F", difficulty: 2 },
   { id: 40, section: "Toán Thực tế", title: "Bể nước: vòi 1 đầy trong 6h, vòi 2 đầy trong 9h. Mở cả hai cùng lúc thì sau bao lâu đầy?",                             options: { A: "3 giờ", B: "3 giờ 36 phút", C: "4 giờ", D: "4 giờ 30 phút", E: "5 giờ", F: "5 giờ 24 phút" }, _c: "D", difficulty: 2 },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // [TEMPLATE A] Câu hình SVG — dùng GeometryFigure.tsx
+  // Thay Q41_MATRIX / Q41_OPTIONS rồi chỉnh title, _c
+  // ═══════════════════════════════════════════════════════════════════════
+  { id: 41, section: "Toán Hình · [Đặt tên loại]", title: "Tìm hình điền vào ô (3,3):", options: { A: "Hình A", B: "Hình B", C: "Hình C", D: "Hình D", E: "Hình E", F: "Hình F" }, _c: "F", hasFigure: true, difficulty: 3 },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // [TEMPLATE B] Câu hình ẢNH — chỉ cần đặt file vào src/assets/questions/
+  // KHÔNG cần đụng vào GeometryFigure.tsx
+  //
+  // imageQuestion : ảnh đề bài (hiển thị to ở giữa)
+  // imageOptions  : ảnh từng đáp án A–F (hiển thị nhỏ trong ô chọn)
+  //                 → bỏ qua imageOptions nếu đáp án là text
+  //
+  // _c encode: String.fromCharCode("B".charCodeAt(0) ^ (42 % 7 + 1))
+  //            = 66 ^ 1 = 67 → "C"
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: 42,
+    section: "Toán Hình · [Đặt tên loại]",
+    title: "Tìm hình còn thiếu trong ma trận:",
+    options: { A: "Hình A", B: "Hình B", C: "Hình C", D: "Hình D", E: "Hình E", F: "Hình F" },
+    _c: "C",             // đáp án đúng = "B" (encode: 66 ^ 1 = 67 = "C")
+    imageQuestion: new URL("../assets/questions/q42_main.png",  import.meta.url).href,
+    imageOptions: {
+      A: new URL("../assets/questions/q42_A.png", import.meta.url).href,
+      B: new URL("../assets/questions/q42_B.png", import.meta.url).href,
+      C: new URL("../assets/questions/q42_C.png", import.meta.url).href,
+      D: new URL("../assets/questions/q42_D.png", import.meta.url).href,
+      E: new URL("../assets/questions/q42_E.png", import.meta.url).href,
+      F: new URL("../assets/questions/q42_F.png", import.meta.url).href,
+    },
+    difficulty: 3,
+  },
 ];
 
 export const QUESTION_COUNT = QUESTIONS.length;

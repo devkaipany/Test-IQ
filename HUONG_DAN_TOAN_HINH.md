@@ -163,9 +163,129 @@ String.fromCharCode("D".charCodeAt(0) ^ (25 % 7 + 1))
 
 ---
 
-## Thêm câu hỏi toán hình mới (câu 33+)
+## Thêm câu hỏi toán hình mới
 
-Nếu muốn thêm hẳn câu hỏi hình mới:
-1. Tạo function `QxxMain()` và `QxxOption()` trong `GeometryFigure.tsx`
-2. Đăng ký vào `MAIN_RENDERERS` và `OPTION_RENDERERS`
-3. Thêm câu vào `questions.ts` với `hasFigure: true`
+Có **2 cách** thêm câu hỏi dạng hình:
+
+---
+
+## 🖼️ Cách B — Câu dạng ẢNH (Khuyến nghị — đơn giản nhất)
+
+> **Không cần đụng vào `GeometryFigure.tsx` hay viết SVG.**  
+> Chỉ cần đặt file ảnh vào đúng thư mục rồi thêm 1 entry vào `questions.ts`.
+
+### Bước 1 — Chuẩn bị ảnh
+
+Đặt ảnh vào thư mục: **`src/assets/questions/`**
+
+Quy tắc đặt tên (thay `XX` bằng id câu):
+
+| File | Dùng cho |
+|------|----------|
+| `qXX_main.png` | Ảnh đề bài (hiển thị to ở giữa) |
+| `qXX_A.png` | Ảnh đáp án A |
+| `qXX_B.png` | Ảnh đáp án B |
+| `qXX_C.png` | Ảnh đáp án C |
+| `qXX_D.png` | Ảnh đáp án D |
+| `qXX_E.png` | Ảnh đáp án E |
+| `qXX_F.png` | Ảnh đáp án F |
+
+> 💡 Định dạng hỗ trợ: `.png`, `.jpg`, `.jpeg`, `.webp`  
+> 💡 Khuyến nghị: nền trắng, kích thước tối đa **800×600px**  
+> 💡 Nếu đáp án là **text** (không có ảnh), chỉ cần bỏ qua `imageOptions`
+
+### Bước 2 — Tính `_c` (encode đáp án)
+
+```js
+// Chạy trong Dev Tools Console (F12):
+String.fromCharCode("B".charCodeAt(0) ^ (42 % 7 + 1))
+// id=42, đáp án="B" → 66 ^ 1 = 67 → _c: "C"
+```
+
+Bảng nhanh `id % 7 + 1`:
+
+| id | key | id | key | id | key |
+|----|-----|----|-----|----|-----|
+| 41 | 7   | 44 | 3   | 47 | 6   |
+| 42 | 1   | 45 | 4   | 48 | 7   |
+| 43 | 2   | 46 | 5   | 49 | 1   |
+
+### Bước 3 — Thêm vào `questions.ts`
+
+```ts
+{
+  id: 42,
+  section: "Toán Hình · Ma trận hình",
+  title: "Tìm hình còn thiếu trong ma trận:",
+  options: { A: "Hình A", B: "Hình B", C: "Hình C", D: "Hình D", E: "Hình E", F: "Hình F" },
+  _c: "C",       // ← encode từ Bước 2 (đáp án đúng = "B")
+  imageQuestion: new URL("../assets/questions/q42_main.png", import.meta.url).href,
+  imageOptions: {
+    A: new URL("../assets/questions/q42_A.png", import.meta.url).href,
+    B: new URL("../assets/questions/q42_B.png", import.meta.url).href,
+    C: new URL("../assets/questions/q42_C.png", import.meta.url).href,
+    D: new URL("../assets/questions/q42_D.png", import.meta.url).href,
+    E: new URL("../assets/questions/q42_E.png", import.meta.url).href,
+    F: new URL("../assets/questions/q42_F.png", import.meta.url).href,
+  },
+  difficulty: 3,
+},
+```
+
+> ⚠️ Sao chép **đúng cú pháp** `new URL(...)` — đây là cách Vite bundle ảnh tĩnh vào app.
+
+---
+
+## 🔷 Cách A — Câu dạng SVG (vẽ bằng code)
+
+Dùng khi muốn tự tạo hình động/có logic (kim đồng hồ, mũi tên, tô góc...).
+
+Template câu **41** đã có sẵn trong `GeometryFigure.tsx`. Quy trình:
+
+### Bước 1 — Chỉnh data trong `GeometryFigure.tsx`
+
+Tìm block `Q41_MATRIX` / `Q41_OPTIONS` và thay nội dung:
+
+```ts
+// Có thể dùng bất kỳ kiểu hình nào có sẵn:
+// CornerFillTile → Corner = "tl" | "tr" | "br" | "bl" | "none"
+// ArrowTile      → Dir    = "up" | "right" | "down" | "left"
+// CircleNeedle   → NeedleKind ("vertical"|"horiz"|"diag1"|"diag2") hoặc number (góc độ)
+
+const Q41_MATRIX: (Corner | "?")[][] = [
+  ["tl", "tr", "br"],
+  ["bl", "tl", "tr"],
+  ["br", "bl", "?"],  // ← ô "?" là câu hỏi
+];
+
+const Q41_OPTIONS: Record<GeoKey, Corner> = {
+  A: "bl",  // ← đây là đáp án đúng
+  B: "tr",
+  C: "tl",
+  D: "br",
+  E: "none",
+  F: "tr",
+};
+```
+
+### Bước 2 — Thêm vào `questions.ts`
+
+```ts
+{ id: 41, section: "Toán Hình · Quy tắc tô góc",
+  title: "Tìm hình điền vào ô (3,3):",
+  options: { A: "Hình A", B: "Hình B", C: "Hình C", D: "Hình D", E: "Hình E", F: "Hình F" },
+  _c: "F",       // encode: "A" ^ (41%7+1) = 65^7 = 70 → "F"
+  hasFigure: true,
+  difficulty: 3 },
+```
+
+### Bước 3 — Sao chép để thêm câu tiếp (42, 43...)
+
+1. Copy block `Q41_MATRIX`, `Q41_OPTIONS`, `Q41Main()`, `Q41Option()` trong `GeometryFigure.tsx`
+2. Đổi tất cả `41` → `42` (hoặc id mới)
+3. Thêm vào `MAIN_RENDERERS` và `OPTION_RENDERERS`:
+   ```ts
+   42: Q42Main,
+   42: (k) => <Q42Option optionKey={k} />,
+   ```
+4. Thêm câu vào `questions.ts` với id tương ứng
