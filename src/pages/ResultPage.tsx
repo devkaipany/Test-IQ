@@ -96,8 +96,8 @@ export default function ResultPage() {
         so_dien_thoai: userInfo.phone,
         email: userInfo.email,
         stk: userInfo.bank_number || "—",
-        ten_ngan_hang: userInfo.bank_name,
-        ten_tai_khoan: userInfo.account_name,
+        ten_ngan_hang: userInfo.bank_name || "—",
+        ten_tai_khoan: userInfo.account_name || "—",
         so_diem: `${score10}/10 (${correctCount}/${total} câu đúng)`,
         iq_uoc_tinh: iq,
         danh_gia_ai: aiText,
@@ -109,9 +109,35 @@ export default function ResultPage() {
   }, [status, userInfo]); // eslint-disable-line
 
   function handleRestart() { clearQuiz(); navigate(""); }
+  function handleGoBack() { navigate("q/1"); }
 
   return (
-    <>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      {/* ── Result TopBar ── */}
+      <div className="result-topbar">
+        <div className="result-topbar-left">
+          <span style={{ fontSize: "1.4rem" }}>&#127942;</span>
+          {userInfo && (
+            <div className="result-topbar-user">
+              <span className="result-topbar-name">&#128100; {userInfo.name}</span>
+              <span className="result-topbar-contact">{userInfo.phone} &middot; {userInfo.email}</span>
+            </div>
+          )}
+        </div>
+        <div className="result-topbar-right">
+          <button className="result-topbar-btn" onClick={handleGoBack}>
+            &larr; Làm lại bài
+          </button>
+          <a
+            className="result-topbar-btn primary"
+            href="https://kaipany.com/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            &#127760; KAIpany.com
+          </a>
+        </div>
+      </div>
       <div className="result-page">
         <div className="result-content">
           {/* Hero */}
@@ -266,6 +292,6 @@ export default function ResultPage() {
 
         </div>
       </div>
-    </>
+    </div>
   );
 }

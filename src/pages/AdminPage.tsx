@@ -260,7 +260,7 @@ export default function AdminPage() {
             <div className="admin-info-grid">
               <a
                 className="admin-info-card admin-info-card-link"
-                href="https://kai-pany.sg.larksuite.com"
+                href="https://kaipany-com.sg.larksuite.com/wiki/T6IzwVyc4iBpLPkZCmxlKBkUgbg?table=tblxUYTJEFhE6Vyz&view=vewAJANvSN"
                 target="_blank" rel="noreferrer"
               >
                 <div className="admin-info-icon">📊</div>
@@ -313,7 +313,7 @@ export default function AdminPage() {
                 </button>
                 <a
                   className="btn btn-ghost"
-                  href="https://open-sg.larksuite.com"
+                  href="https://kaipany-com.sg.larksuite.com/wiki/T6IzwVyc4iBpLPkZCmxlKBkUgbg?table=tblxUYTJEFhE6Vyz&view=vewAJANvSN"
                   target="_blank" rel="noreferrer"
                 >
                   🔗 Lark Suite
@@ -341,11 +341,11 @@ export default function AdminPage() {
                     className={`qm-diff-btn${filterDiff === d ? " active" : ""}`}
                     onClick={() => setFilterDiff(d)}
                     style={d > 0 ? {
-                      borderColor: filterDiff === d ? getDiffColor(d) : undefined,
-                      color: filterDiff === d ? getDiffColor(d) : undefined,
+                      borderColor: filterDiff === d ? getDiffColor(d as 1 | 2 | 3) : undefined,
+                      color: filterDiff === d ? getDiffColor(d as 1 | 2 | 3) : undefined,
                     } : undefined}
                   >
-                    {d === 0 ? "Tất cả" : getDiffLabel(d)}
+                    {d === 0 ? "Tất cả" : getDiffLabel(d as 1 | 2 | 3)}
                   </button>
                 ))}
               </div>

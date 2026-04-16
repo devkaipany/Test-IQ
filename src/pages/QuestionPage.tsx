@@ -141,7 +141,7 @@ export default function QuestionPage({ questionId: pos }: Props) {
           })}
         </div>
 
-        {/* Nav Grid */}
+        {/* Nav Sidebar — floating button on right edge */}
         <NavGrid currentPos={pos} />
 
         {/* Navigation buttons */}
