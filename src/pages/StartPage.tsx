@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuiz } from "../context/QuizContext";
 import { navigate } from "../App";
+import { isAdmin } from "../context/QuizContext";
 
 export default function StartPage() {
   const { status, userInfo, clearQuiz, startQuiz } = useQuiz();
@@ -22,6 +23,24 @@ export default function StartPage() {
 
   return (
     <div className="start-page">
+      {/* Neon background */}
+      <div className="neon-grid" aria-hidden="true" />
+      <div className="neon-orb neon-orb-1" aria-hidden="true" />
+      <div className="neon-orb neon-orb-2" aria-hidden="true" />
+      <div className="neon-orb neon-orb-3" aria-hidden="true" />
+
+      {/* Top nav */}
+      <div className="start-topnav">
+        <a href="https://kaipany.com/" target="_blank" rel="noreferrer" className="start-topnav-link">
+          🌐 kaipany.com
+        </a>
+        {userInfo && isAdmin(userInfo.email) && (
+          <button className="start-topnav-link" onClick={() => navigate("admin")}>
+            ⚙️ Admin Panel
+          </button>
+        )}
+      </div>
+
       <div className="start-card">
         <div className="start-badge">KAIpany · Kiểm tra năng lực</div>
         <h1 className="start-title">

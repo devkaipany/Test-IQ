@@ -3,7 +3,6 @@ import { useQuiz } from "../context/QuizContext";
 import { QUESTIONS, calcIQ, iqLabel, decodeAnswer } from "../data/questions";
 import { navigate } from "../App";
 import { sendQuizResult } from "../utils/webhook";
-import { saveQuizResult } from "../firebase";
 
 // ── AI Evaluation Engine ──────────────────────────────────────────────────────
 
@@ -55,18 +54,12 @@ function generateAIFeedback(answers: Record<number, string | null>, correctCount
   return lines;
 }
 
-// ── CV Link ───────────────────────────────────────────────────────────────────
-
-const CV_LINK = "https://kai-pany.sg.larksuite.com/wiki/JcZ5wlBari6LnZkL7nvlQxb0grb";
-
-
 // ── Result Page ────────────────────────────────────────────────────────────────
 
 export default function ResultPage() {
-  const { status, answers, userInfo, clearQuiz, questionOrder } = useQuiz();
+  const { status, answers, userInfo, clearQuiz } = useQuiz();
   const sentRef = useRef(false);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
-
 
   useEffect(() => {
     if (status === "idle") navigate("");
@@ -82,28 +75,27 @@ export default function ResultPage() {
   const emoji = percent >= 80 ? "🎉" : percent >= 60 ? "👍" : "📚";
   const aiFeedback = generateAIFeedback(answers, correctCount, iq, userInfo?.name);
 
-  // Auto-send to webhook + Firebase once
+  // Section stats for radar-style breakdown
+  const sectionStats = buildSectionStats(answers);
+
+  // Auto-send to Lark webhook only (no Firebase)
   useEffect(() => {
     if (status !== "submitted" || sentRef.current || !userInfo) return;
     sentRef.current = true;
     setSendStatus("sending");
 
     const aiText = aiFeedback.join("\n\n");
-    const answersStr: Record<string, string> = {};
-    for (const [k, v] of Object.entries(answers)) answersStr[k] = v ?? "—";
 
-    // Timeout helper — if a promise takes too long, resolve with a fallback
     function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
       return Promise.race([p, new Promise<T>(res => setTimeout(() => res(fallback), ms))]);
     }
 
-    // Webhook (primary) — sets the visible status
     withTimeout(
       sendQuizResult({
         ho_ten: userInfo.name,
         so_dien_thoai: userInfo.phone,
         email: userInfo.email,
-        stk: userInfo.bank_number,
+        stk: userInfo.bank_number || "—",
         ten_ngan_hang: userInfo.bank_name,
         ten_tai_khoan: userInfo.account_name,
         so_diem: `${score10}/10 (${correctCount}/${total} câu đúng)`,
@@ -114,35 +106,12 @@ export default function ResultPage() {
       false,
     ).then(ok => setSendStatus(ok ? "ok" : "error"));
 
-    // Firebase (secondary) — fire-and-forget, failures don't affect UI
-    withTimeout(
-      saveQuizResult({
-        ho_ten: userInfo.name,
-        so_dien_thoai: userInfo.phone,
-        email: userInfo.email,
-        stk: userInfo.bank_number,
-        ten_ngan_hang: userInfo.bank_name,
-        ten_tai_khoan: userInfo.account_name,
-        so_cau_dung: correctCount,
-        tong_cau: total,
-        phan_tram: percent,
-        diem_10: score10,
-        iq_uoc_tinh: iq,
-        danh_gia_ai: aiText,
-        question_order: questionOrder,
-        answers: answersStr,
-      }),
-      8000,
-      null,
-    ).catch(() => {/* silent */ });
-
   }, [status, userInfo]); // eslint-disable-line
 
   function handleRestart() { clearQuiz(); navigate(""); }
 
   return (
     <>
-
       <div className="result-page">
         <div className="result-content">
           {/* Hero */}
@@ -206,6 +175,42 @@ export default function ResultPage() {
             ))}
           </div>
 
+          {/* Section breakdown dashboard */}
+          <div className="section-breakdown-card">
+            <div className="section-breakdown-header">
+              <span className="section-breakdown-icon">📊</span>
+              <div>
+                <div className="section-breakdown-title">Kết quả theo phần thi</div>
+                <div className="section-breakdown-sub">Phân tích chi tiết từng nhóm câu hỏi</div>
+              </div>
+            </div>
+            <div className="section-breakdown-list">
+              {sectionStats.map(s => (
+                <div key={s.name} className="section-breakdown-item">
+                  <div className="section-breakdown-name">{s.name}</div>
+                  <div className="section-breakdown-bar-wrap">
+                    <div className="section-breakdown-bar-track">
+                      <div
+                        className="section-breakdown-bar-fill"
+                        style={{
+                          width: `${s.pct}%`,
+                          background: s.pct >= 70 ? "#22c55e" : s.pct >= 45 ? "#f59e0b" : "#ef4444",
+                        }}
+                      />
+                    </div>
+                    <span className="section-breakdown-stat">{s.correct}/{s.total}</span>
+                    <span
+                      className="section-breakdown-pct"
+                      style={{ color: s.pct >= 70 ? "#22c55e" : s.pct >= 45 ? "#f59e0b" : "#ef4444" }}
+                    >
+                      {s.pct}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* AI Evaluation */}
           <div className="ai-eval-card">
             <div className="ai-eval-header">
@@ -251,9 +256,11 @@ export default function ResultPage() {
             </table>
           </div>
 
-          {/* Actions */}
+          {/* Actions — NO CV button */}
           <div className="result-actions">
-            <a className="btn btn-cv" href={CV_LINK} target="_blank" rel="noopener noreferrer">📎 Nộp CV cho KAIpany</a>
+            <a className="btn btn-ghost" href="https://kaipany.com/" target="_blank" rel="noreferrer">
+              🌐 Về trang chủ KAIpany
+            </a>
             <button className="btn btn-primary" onClick={handleRestart}>🔄 Làm lại</button>
           </div>
 

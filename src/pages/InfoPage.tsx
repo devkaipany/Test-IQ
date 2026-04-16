@@ -39,7 +39,8 @@ export default function InfoPage() {
     if (!f.name.trim())          e.name         = "Vui lòng nhập họ tên";
     if (!validatePhone(f.phone)) e.phone        = "Số điện thoại không hợp lệ (9–11 chữ số)";
     if (!validateEmail(f.email)) e.email        = "Email không hợp lệ";
-    if (!f.bank_number.trim() || !/^\d{6,20}$/.test(f.bank_number.trim()))
+    // bank_number is now optional — no required validation
+    if (f.bank_number && !/^\d{6,20}$/.test(f.bank_number.trim()))
                                   e.bank_number  = "STK phải là số (6–20 chữ số)";
     if (!f.bank_name.trim())     e.bank_name    = "Vui lòng chọn ngân hàng";
     if (!f.account_name.trim())  e.account_name = "Vui lòng nhập tên chủ tài khoản";
@@ -61,7 +62,7 @@ export default function InfoPage() {
     e.preventDefault();
     const allTouched: Partial<Record<FormFields, boolean>> = {
       name: true, phone: true, email: true,
-      bank_number: true, bank_name: true, account_name: true,
+      bank_name: true, account_name: true,
     };
     setTouched(allTouched);
     const errs = validate(form);
@@ -88,7 +89,19 @@ export default function InfoPage() {
 
   return (
     <div className="info-page">
+      {/* Neon background elements */}
+      <div className="neon-grid" aria-hidden="true" />
+      <div className="neon-orb neon-orb-1" aria-hidden="true" />
+      <div className="neon-orb neon-orb-2" aria-hidden="true" />
+
       <div className="info-card">
+        {/* Website link */}
+        <div className="info-site-link">
+          <a href="https://kaipany.com/" target="_blank" rel="noreferrer" className="site-link-btn">
+            🌐 kaipany.com
+          </a>
+        </div>
+
         <div className="info-header">
           <div className="start-badge">Bài kiểm tra · Toán Logic</div>
           <h1 className="info-title">Thông tin thí sinh</h1>
@@ -145,10 +158,10 @@ export default function InfoPage() {
               onBlur={() => handleBlur("account_name")} autoComplete="off" />
           )}
 
-          {field("bank_number", "Số tài khoản *",
+          {field("bank_number", "Số tài khoản (tùy chọn)",
             <input id="info-bank-number"
               className={`form-input${touched.bank_number && errors.bank_number ? " error" : ""}`}
-              type="text" placeholder="1234567890" value={form.bank_number} inputMode="numeric"
+              type="text" placeholder="1234567890 (không bắt buộc)" value={form.bank_number} inputMode="numeric"
               onChange={e => handleChange("bank_number", e.target.value.replace(/\D/g, ""))}
               onBlur={() => handleBlur("bank_number")} autoComplete="off" />
           )}

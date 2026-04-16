@@ -11,7 +11,6 @@ import type { GeoKey } from "../components/GeometryFigure";
 const OPTION_KEYS: OptionKey[] = ["A", "B", "C", "D", "E", "F"];
 
 interface Props {
-  /** 1-based position in the shuffled quiz order */
   questionId: number;
 }
 
@@ -19,13 +18,11 @@ export default function QuestionPage({ questionId: pos }: Props) {
   const { status, answers, setAnswer, submitQuiz, userInfo, questionOrder } = useQuiz();
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Guards
   useEffect(() => {
     if (status === "idle" || !userInfo) navigate("");
     else if (status === "submitted") navigate("result");
   }, [status, userInfo]);
 
-  // Map position → actual question ID via shuffled order
   const actualId = questionOrder[pos - 1] ?? pos;
   const question = QUESTIONS.find(q => q.id === actualId);
   if (!question) return null;
@@ -33,6 +30,7 @@ export default function QuestionPage({ questionId: pos }: Props) {
   const selected = answers[actualId] ?? null;
   const isFigure = question.hasFigure === true;
   const isLast = pos === 40;
+  const totalAnswered = Object.values(answers).filter(v => v !== null).length;
 
   function handleSelect(key: OptionKey) {
     if (selected === key) return;
@@ -56,13 +54,40 @@ export default function QuestionPage({ questionId: pos }: Props) {
     if (pos > 1) navigate(`q/${pos - 1}`);
   }
 
+  function goNext() {
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    if (isLast) {
+      if (window.confirm(`Bạn đã trả lời ${totalAnswered}/40 câu. Nộp bài ngay?`)) {
+        submitQuiz();
+        navigate("result");
+      }
+    } else {
+      navigate(`q/${pos + 1}`);
+    }
+  }
+
   const diffLabel = ["", "Dễ", "Trung bình", "Khó"][question.difficulty];
   const diffColor = ["", "#10b981", "#f59e0b", "#ef4444"][question.difficulty];
+  const progressPct = Math.round((totalAnswered / 40) * 100);
 
   return (
     <div className="app-shell">
       <TopBar />
       <div className="question-content">
+
+        {/* Progress banner */}
+        <div className="question-progress-banner">
+          <div className="qpb-left">
+            <span className="qpb-pos">Câu <strong>{pos}</strong>/40</span>
+            <span className="qpb-answered">{totalAnswered} đã trả lời</span>
+          </div>
+          <div className="qpb-bar-wrap">
+            <div className="qpb-bar">
+              <div className="qpb-bar-fill" style={{ width: `${progressPct}%` }} />
+            </div>
+            <span className="qpb-pct">{progressPct}%</span>
+          </div>
+        </div>
 
         {/* Header */}
         <div className="question-header">
@@ -76,14 +101,16 @@ export default function QuestionPage({ questionId: pos }: Props) {
         {/* Question title */}
         <div className="question-title">{question.title}</div>
 
-        {/* Figure for geometry questions */}
+        {/* Figure */}
         {isFigure && (
           <div className="figure-area">
             <GeometryFigure questionId={question.id} variant="main" />
           </div>
         )}
 
-        <div className="options-label">Chọn đáp án — tự động sang câu tiếp theo</div>
+        <div className="options-label">
+          {selected ? "✅ Đã chọn — tự động chuyển câu tiếp theo" : "👆 Chọn một đáp án bên dưới"}
+        </div>
 
         {/* Answer cards */}
         <div
@@ -114,9 +141,10 @@ export default function QuestionPage({ questionId: pos }: Props) {
           })}
         </div>
 
-        {/* Navigation */}
+        {/* Nav Grid */}
         <NavGrid currentPos={pos} />
 
+        {/* Navigation buttons */}
         <div className="question-nav">
           <button
             className="btn btn-ghost"
@@ -129,9 +157,12 @@ export default function QuestionPage({ questionId: pos }: Props) {
           <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
             {pos} / 40
           </span>
-          <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
-            {isLast ? "Câu cuối" : "Chọn đáp án để tiếp tục →"}
-          </span>
+          <button
+            className="btn btn-ghost"
+            onClick={goNext}
+          >
+            {isLast ? "🏁 Nộp bài" : "Câu tiếp →"}
+          </button>
         </div>
       </div>
     </div>

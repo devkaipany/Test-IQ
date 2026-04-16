@@ -1,6 +1,7 @@
 import { useQuiz } from "../context/QuizContext";
 import { QUESTION_COUNT } from "../data/questions";
 import { navigate } from "../App";
+import { isAdmin } from "../context/QuizContext";
 
 function formatTime(ms: number): string {
   const totalSec = Math.max(0, Math.ceil(ms / 1000));
@@ -12,7 +13,7 @@ function formatTime(ms: number): string {
 }
 
 export default function TopBar() {
-  const { answers, submitQuiz, timeLeftMs } = useQuiz();
+  const { answers, submitQuiz, timeLeftMs, userInfo } = useQuiz();
   const answered = Object.values(answers).filter(v => v !== null).length;
   const pct = (answered / QUESTION_COUNT) * 100;
 
@@ -28,10 +29,33 @@ export default function TopBar() {
 
   return (
     <div className="topbar">
-      <span className="topbar-brand">
-        <span className="brand-kai">KAI</span><span className="brand-pany">pany</span>
-      </span>
-
+      <div className="topbar-left">
+        <a
+          className="topbar-brand"
+          href="https://kaipany.com/"
+          target="_blank"
+          rel="noreferrer"
+          title="Về trang chủ KAIpany"
+        >
+          <span className="brand-kai">KAI</span><span className="brand-pany">pany</span>
+        </a>
+        <a
+          className="topbar-home-link"
+          href="https://kaipany.com/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          🏠 Trang chủ
+        </a>
+        {userInfo && isAdmin(userInfo.email) && (
+          <button
+            className="topbar-admin-link"
+            onClick={() => navigate("admin")}
+          >
+            ⚙️ Admin
+          </button>
+        )}
+      </div>
 
       <div className="topbar-progress topbar-progress-desktop">
         <div className="topbar-progress-text">{answered}/{QUESTION_COUNT}</div>
