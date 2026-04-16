@@ -37,7 +37,7 @@ export default function InfoPage() {
   function validate(f: UserInfo): FormErrors {
     const e: FormErrors = {};
     if (!f.name.trim()) e.name = "Vui lòng nhập họ tên";
-    if (!validatePhone(f.phone)) e.phone = "Số điện thoại không hợp lệ (9–11 chữ số)";
+    if (!validatePhone(f.phone)) e.phone = "Số điện thoại không hợp lệ (10–11 chữ số)";
     if (!validateEmail(f.email)) e.email = "Email không hợp lệ";
     // bank fields are all optional — only format-check bank_number if provided
     if (f.bank_number && !/^\d{6,20}$/.test(f.bank_number.trim()))
