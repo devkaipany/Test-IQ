@@ -25,7 +25,7 @@ function parseHash(hash: string): Route {
   const m = h.match(/^q\/(\d+)$/);
   if (m) {
     const id = parseInt(m[1]);
-    if (id >= 1 && id <= 140) return { name: "question", id };
+    if (id >= 1 && id <= 40) return { name: "question", id };
   }
   return { name: "select" };
 }

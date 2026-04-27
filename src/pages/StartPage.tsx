@@ -14,8 +14,7 @@ export default function StartPage() {
 
   function handleStart() {
     startQuiz();
-    const firstId = selectedSet === 1 ? 1 : 101;
-    navigate(`q/${firstId}`);
+    navigate("q/1"); // position luôn bắt đầu từ 1, questionOrder sẽ map sang ID thực
   }
 
   function handleChangeInfo() {
