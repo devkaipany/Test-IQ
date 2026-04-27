@@ -4,7 +4,7 @@ import { navigate } from "../App";
 import { isAdmin } from "../context/QuizContext";
 
 export default function StartPage() {
-  const { status, userInfo, clearQuiz, startQuiz } = useQuiz();
+  const { status, userInfo, clearQuiz, startQuiz, selectedSet } = useQuiz();
 
   useEffect(() => {
     if (!userInfo) { navigate("info"); return; }
@@ -14,7 +14,8 @@ export default function StartPage() {
 
   function handleStart() {
     startQuiz();
-    navigate("q/1");
+    const firstId = selectedSet === 1 ? 1 : 101;
+    navigate(`q/${firstId}`);
   }
 
   function handleChangeInfo() {
@@ -48,8 +49,9 @@ export default function StartPage() {
           <span style={{ fontSize: "1.6rem", color: "var(--text-dim)", fontStyle: "normal" }}> Toán Logic</span>
         </h1>
         <p className="start-subtitle">
-          Kiểm tra tư duy logic qua 40 câu hỏi đa dạng: dãy số, suy luận,
-          đố tư duy, toán hình và toán thực tế.
+          {selectedSet === 1
+            ? "Kiểm tra tư duy logic qua 40 câu hỏi đa dạng: dãy số, suy luận, đố tư duy, toán hình và toán thực tế."
+            : "40 câu Logic IQ chuyên sâu: dãy số, tổ hợp xác suất, suy luận mệnh đề và nhận dạng hình học."}
         </p>
 
         {/* User greeting */}
@@ -73,15 +75,26 @@ export default function StartPage() {
             <span className="start-meta-value">30</span>
             <span className="start-meta-label">Phút</span>
           </div>
+          <div className="start-meta-item">
+            <span className="start-meta-value" style={{ fontSize: "1rem" }}>
+              {selectedSet === 1 ? "Bộ đề 1" : "Bộ đề 2"}
+            </span>
+            <span className="start-meta-label">Bộ đề</span>
+          </div>
         </div>
 
         <div className="start-actions">
           <button className="btn btn-primary btn-full btn-lg" onClick={handleStart}>
             🚀 Bắt đầu làm bài
           </button>
-          <button className="btn btn-danger" onClick={clearQuiz}>
-            🗑️ Xóa phiên làm bài
-          </button>
+          <div className="start-actions-row">
+            <button className="btn btn-ghost" onClick={() => navigate("select")}>
+              🔄 Đổi bộ đề
+            </button>
+            <button className="btn btn-danger" onClick={clearQuiz}>
+              🗑️ Xóa phiên
+            </button>
+          </div>
         </div>
       </div>
     </div>

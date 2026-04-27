@@ -5,8 +5,10 @@ import QuestionPage from "./pages/QuestionPage";
 import ResultPage from "./pages/ResultPage";
 import InfoPage from "./pages/InfoPage";
 import AdminPage from "./pages/AdminPage";
+import ExamSelectPage from "./pages/ExamSelectPage";
 
 type Route =
+  | { name: "select" }
   | { name: "start" }
   | { name: "info" }
   | { name: "admin" }
@@ -15,16 +17,17 @@ type Route =
 
 function parseHash(hash: string): Route {
   const h = hash.replace(/^#\/?/, "");
-  if (h === "" || h === "start") return { name: "start" };
+  if (h === "" || h === "select") return { name: "select" };
+  if (h === "start") return { name: "start" };
   if (h === "result") return { name: "result" };
   if (h === "info") return { name: "info" };
   if (h === "admin") return { name: "admin" };
   const m = h.match(/^q\/(\d+)$/);
   if (m) {
     const id = parseInt(m[1]);
-    if (id >= 1 && id <= 40) return { name: "question", id };
+    if (id >= 1 && id <= 140) return { name: "question", id };
   }
-  return { name: "start" };
+  return { name: "select" };
 }
 
 export function navigate(path: string) {
@@ -46,7 +49,8 @@ function Router() {
   if (route.name === "info") return <InfoPage />;
   if (route.name === "admin") return <AdminPage />;
   if (route.name === "question") return <QuestionPage questionId={route.id} />;
-  return <StartPage />;
+  if (route.name === "start") return <StartPage />;
+  return <ExamSelectPage />;
 }
 
 export default function App() {

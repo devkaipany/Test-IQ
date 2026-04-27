@@ -6,8 +6,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import type { OptionKey } from "../data/questions";
-import { QUESTION_COUNT, QUIZ_DURATION_MINUTES } from "../data/questions";
+import type { OptionKey, QuizQuestion } from "../data/questions";
+import { ALL_QUESTION_SETS, QUESTIONS_SET1, QUIZ_DURATION_MINUTES } from "../data/questions";
 
 export interface UserInfo {
   name: string;
@@ -35,6 +35,7 @@ export interface QuizState {
   answers: Record<number, OptionKey | null>;
   userInfo: UserInfo | null;
   questionOrder: number[]; // shuffled question IDs for this session
+  selectedSet: 1 | 2;    // bộ đề đang chọn
 }
 
 interface QuizContextValue extends QuizState {
@@ -43,10 +44,12 @@ interface QuizContextValue extends QuizState {
   clearQuiz: () => void;
   setAnswer: (questionId: number, option: OptionKey) => void;
   saveUserInfo: (info: UserInfo) => void;
+  selectSet: (id: 1 | 2) => void;
+  currentQuestions: QuizQuestion[];
   timeLeftMs: number;
 }
 
-const STORAGE_KEY = "math_quiz_state_v3";
+const STORAGE_KEY = "math_quiz_state_v4";
 
 /** Fisher-Yates shuffle */
 function shuffle<T>(arr: T[]): T[] {
@@ -58,14 +61,19 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function makeOrder(): number[] {
-  return shuffle(Array.from({ length: QUESTION_COUNT }, (_, i) => i + 1));
+function makeOrder(questions: QuizQuestion[]): number[] {
+  return shuffle(questions.map(q => q.id));
 }
 
 function loadState(): QuizState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as QuizState;
+    if (raw) {
+      const parsed = JSON.parse(raw) as QuizState;
+      // Đảm bảo selectedSet hợp lệ
+      if (parsed.selectedSet !== 1 && parsed.selectedSet !== 2) parsed.selectedSet = 1;
+      return parsed;
+    }
   } catch { /* ignore */ }
   return {
     status: "idle",
@@ -73,7 +81,8 @@ function loadState(): QuizState {
     endsAt: null,
     answers: {},
     userInfo: null,
-    questionOrder: makeOrder(),
+    questionOrder: makeOrder(QUESTIONS_SET1),
+    selectedSet: 1,
   };
 }
 
@@ -111,13 +120,24 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, userInfo: info }));
   }, []);
 
+  const selectSet = useCallback((id: 1 | 2) => {
+    setState(prev => ({
+      ...prev,
+      selectedSet: id,
+      questionOrder: makeOrder(ALL_QUESTION_SETS[id]),
+    }));
+  }, []);
+
   const startQuiz = useCallback(() => {
-    const now = Date.now();
-    const endsAt = now + QUIZ_DURATION_MINUTES * 60 * 1000;
-    const answers: Record<number, OptionKey | null> = {};
-    for (let i = 1; i <= QUESTION_COUNT; i++) answers[i] = null;
-    const questionOrder = makeOrder(); // new shuffle every quiz start
-    setState(prev => ({ ...prev, status: "running", startedAt: now, endsAt, answers, questionOrder }));
+    setState(prev => {
+      const questions = ALL_QUESTION_SETS[prev.selectedSet];
+      const now = Date.now();
+      const endsAt = now + QUIZ_DURATION_MINUTES * 60 * 1000;
+      const answers: Record<number, OptionKey | null> = {};
+      for (const q of questions) answers[q.id] = null;
+      const questionOrder = makeOrder(questions);
+      return { ...prev, status: "running", startedAt: now, endsAt, answers, questionOrder };
+    });
   }, []);
 
   const submitQuiz = useCallback(() => {
@@ -132,7 +152,8 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
       endsAt: null,
       answers: {},
       userInfo: prev.userInfo,
-      questionOrder: makeOrder(), // new shuffle for next attempt
+      selectedSet: prev.selectedSet,
+      questionOrder: makeOrder(ALL_QUESTION_SETS[prev.selectedSet]),
     }));
   }, []);
 
@@ -143,8 +164,10 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const currentQuestions = ALL_QUESTION_SETS[state.selectedSet] ?? QUESTIONS_SET1;
+
   return (
-    <QuizContext.Provider value={{ ...state, startQuiz, submitQuiz, clearQuiz, setAnswer, saveUserInfo, timeLeftMs }}>
+    <QuizContext.Provider value={{ ...state, startQuiz, submitQuiz, clearQuiz, setAnswer, saveUserInfo, selectSet, currentQuestions, timeLeftMs }}>
       {children}
     </QuizContext.Provider>
   );

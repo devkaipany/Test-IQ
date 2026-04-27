@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuiz } from "../context/QuizContext";
 import { isAdmin } from "../context/QuizContext";
 import { navigate } from "../App";
-import { QUESTIONS } from "../data/questions";
+import { QUESTIONS, ALL_QUESTION_SETS } from "../data/questions";
 import type { QuizQuestion, OptionKey } from "../data/questions";
 
 // ── Question state manager (localStorage) ────────────────────────────────────
@@ -51,11 +51,12 @@ interface NewQ {
   A: string; B: string; C: string; D: string; E: string; F: string;
   answer: OptionKey;
   difficulty: 1 | 2 | 3;
+  targetSet: 1 | 2;
 }
 const EMPTY_Q: NewQ = {
   section: "", title: "",
   A: "", B: "", C: "", D: "", E: "", F: "",
-  answer: "A", difficulty: 2,
+  answer: "A", difficulty: 2, targetSet: 1,
 };
 
 // ── Admin Tab type ────────────────────────────────────────────────────────────
@@ -111,8 +112,9 @@ export default function AdminPage() {
       setAddMsg("⚠️ Vui lòng điền đủ các trường bắt buộc (Section, Câu hỏi, A, B, C, D)");
       return;
     }
-    const allQ = [...QUESTIONS, ...qm.custom];
-    const maxId = Math.max(...allQ.map(q => q.id), 100);
+    const setQuestions = ALL_QUESTION_SETS[newQ.targetSet];
+    const allQ = [...setQuestions, ...qm.custom.filter(q => q.id >= (newQ.targetSet === 1 ? 1 : 101) && q.id < (newQ.targetSet === 1 ? 101 : 999))];
+    const maxId = Math.max(...allQ.map(q => q.id), newQ.targetSet === 1 ? 40 : 140);
     const newId = maxId + 1;
     const added: QuizQuestion = {
       id: newId,
@@ -432,6 +434,17 @@ export default function AdminPage() {
               )}
               <form onSubmit={handleAddQuestion} className="addq-form">
                 <div className="addq-row">
+                  <div className="addq-field">
+                    <label>Thêm vào bộ đề *</label>
+                    <select
+                      className="form-input"
+                      value={newQ.targetSet}
+                      onChange={e => setNewQ(p => ({ ...p, targetSet: +e.target.value as 1 | 2 }))}
+                    >
+                      <option value={1}>📊 Bộ đề 1 — Toán Logic (KAI-IQ101)</option>
+                      <option value={2}>🧠 Bộ đề 2 — Logic IQ (KAI-IQ102)</option>
+                    </select>
+                  </div>
                   <div className="addq-field">
                     <label>Phần (Section) *</label>
                     <input

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { useQuiz } from "../context/QuizContext";
-import { QUESTIONS } from "../data/questions";
 import type { OptionKey } from "../data/questions";
 import { navigate } from "../App";
 import TopBar from "../components/TopBar";
@@ -15,7 +14,7 @@ interface Props {
 }
 
 export default function QuestionPage({ questionId: pos }: Props) {
-  const { status, answers, setAnswer, submitQuiz, userInfo, questionOrder } = useQuiz();
+  const { status, answers, setAnswer, submitQuiz, userInfo, questionOrder, currentQuestions } = useQuiz();
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -23,15 +22,16 @@ export default function QuestionPage({ questionId: pos }: Props) {
     else if (status === "submitted") navigate("result");
   }, [status, userInfo]);
 
+  const totalQ = currentQuestions.length;
   const actualId = questionOrder[pos - 1] ?? pos;
-  const question = QUESTIONS.find(q => q.id === actualId);
+  const question = currentQuestions.find(q => q.id === actualId);
   if (!question) return null;
 
   const selected = answers[actualId] ?? null;
   const isFigure  = question.hasFigure === true;
-  const isImage   = !!question.imageQuestion;  // câu ảnh ngoài
-  const isVisual  = isFigure || isImage;        // hiển thị dạng có hình (layout lưới 3 cột)
-  const isLast    = pos === 40;
+  const isImage   = !!question.imageQuestion;
+  const isVisual  = isFigure || isImage;
+  const isLast    = pos === totalQ;
   const totalAnswered = Object.values(answers).filter(v => v !== null).length;
 
   function handleSelect(key: OptionKey) {
@@ -40,8 +40,8 @@ export default function QuestionPage({ questionId: pos }: Props) {
 
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     advanceTimerRef.current = setTimeout(() => {
-      if (isLast) {
-        if (window.confirm("Bạn đã trả lời câu cuối! Nộp bài ngay?")) {
+          if (isLast) {
+        if (window.confirm(`Bạn đã trả lời câu cuối! Nộp bài ngay?`)) {
           submitQuiz();
           navigate("result");
         }
@@ -59,7 +59,7 @@ export default function QuestionPage({ questionId: pos }: Props) {
   function goNext() {
     if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     if (isLast) {
-      if (window.confirm(`Bạn đã trả lời ${totalAnswered}/40 câu. Nộp bài ngay?`)) {
+      if (window.confirm(`Bạn đã trả lời ${totalAnswered}/${totalQ} câu. Nộp bài ngay?`)) {
         submitQuiz();
         navigate("result");
       }
@@ -70,7 +70,7 @@ export default function QuestionPage({ questionId: pos }: Props) {
 
   const diffLabel = ["", "Dễ", "Trung bình", "Khó"][question.difficulty];
   const diffColor = ["", "#10b981", "#f59e0b", "#ef4444"][question.difficulty];
-  const progressPct = Math.round((totalAnswered / 40) * 100);
+  const progressPct = Math.round((totalAnswered / totalQ) * 100);
 
   return (
     <div className="app-shell">
@@ -80,7 +80,7 @@ export default function QuestionPage({ questionId: pos }: Props) {
         {/* Progress banner */}
         <div className="question-progress-banner">
           <div className="qpb-left">
-            <span className="qpb-pos">Câu <strong>{pos}</strong>/40</span>
+            <span className="qpb-pos">Câu <strong>{pos}</strong>/{totalQ}</span>
             <span className="qpb-answered">{totalAnswered} đã trả lời</span>
           </div>
           <div className="qpb-bar-wrap">
@@ -206,7 +206,7 @@ export default function QuestionPage({ questionId: pos }: Props) {
             ← Câu trước
           </button>
           <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
-            {pos} / 40
+            {pos} / {totalQ}
           </span>
           <button
             className="btn btn-ghost"

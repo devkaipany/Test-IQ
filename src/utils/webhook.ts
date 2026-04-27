@@ -43,6 +43,7 @@ export interface QuizResultPayload {
   so_diem: string;
   iq_uoc_tinh: number;
   danh_gia_ai: string;
+  ma_de: string;       // Mã đề: KAI-IQ101 hoặc KAI-IQ102
 }
 
 export async function sendQuizResult(p: QuizResultPayload): Promise<boolean> {

@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuiz } from "../context/QuizContext";
-import { QUESTIONS, calcIQ, iqLabel, decodeAnswer } from "../data/questions";
+import { calcIQ, iqLabel, decodeAnswer } from "../data/questions";
 import { navigate } from "../App";
 import { sendQuizResult } from "../utils/webhook";
 
+// Mã đề theo setId
+const EXAM_CODES: Record<1 | 2, string> = { 1: "KAI-IQ101", 2: "KAI-IQ102" };
+const EXAM_NAMES: Record<1 | 2, string> = { 1: "Toán Logic", 2: "Logic IQ" };
+
 // ── AI Evaluation Engine ──────────────────────────────────────────────────────
 
-function buildSectionStats(answers: Record<number, string | null>) {
+import type { QuizQuestion } from "../data/questions";
+
+function buildSectionStats(answers: Record<number, string | null>, questions: QuizQuestion[]) {
   const map: Record<string, { correct: number; total: number }> = {};
-  for (const q of QUESTIONS) {
+  for (const q of questions) {
     const key = q.section.split(" · ")[0];
     if (!map[key]) map[key] = { correct: 0, total: 0 };
     map[key].total++;
@@ -19,9 +25,18 @@ function buildSectionStats(answers: Record<number, string | null>) {
   }));
 }
 
-function generateAIFeedback(answers: Record<number, string | null>, correctCount: number, iq: number, userName?: string): string[] {
-  const sections = buildSectionStats(answers);
-  const pct = Math.round((correctCount / 40) * 100);
+function generateAIFeedback(
+  answers: Record<number, string | null>,
+  correctCount: number,
+  iq: number,
+  questions: QuizQuestion[],
+  selectedSet: 1 | 2,
+  userName?: string
+): string[] {
+  const sections = buildSectionStats(answers, questions);
+  const total = questions.length;
+  const pct = Math.round((correctCount / total) * 100);
+  const examName = EXAM_NAMES[selectedSet];
   const skipped = Object.values(answers).filter(v => v === null).length;
   const name = userName ?? "Bạn";
   const strong = sections.filter(s => s.pct >= 70);
@@ -29,27 +44,49 @@ function generateAIFeedback(answers: Record<number, string | null>, correctCount
   const soSo = sections.filter(s => s.pct >= 50 && s.pct < 70);
   const lines: string[] = [];
 
-  if (pct >= 85) lines.push(`${name} đã hoàn thành bài kiểm tra với kết quả xuất sắc — ${correctCount}/40 câu đúng (${pct}%). Chỉ số tư duy logic ước tính ${iq} điểm cho thấy năng lực phân tích và xử lý thông tin ở mức rất cao so với mặt bằng chung.`);
-  else if (pct >= 65) lines.push(`${name} hoàn thành bài kiểm tra với ${correctCount}/40 câu đúng (${pct}%), thuộc nhóm kết quả khá tốt. Chỉ số IQ ước tính ${iq} phản ánh nền tảng tư duy logic vững, với khả năng nhận diện quy luật và suy luận có hệ thống.`);
-  else if (pct >= 45) lines.push(`${name} trả lời đúng ${correctCount}/40 câu (${pct}%), đây là kết quả ở mức trung bình. Chỉ số IQ ước tính ${iq} cho thấy năng lực tư duy logic đang phát triển — có tiềm năng cải thiện đáng kể qua luyện tập thêm.`);
-  else lines.push(`${name} trả lời đúng ${correctCount}/40 câu (${pct}%). Kết quả này cho thấy đây là lần đầu tiếp cận với dạng bài kiểm tra tư duy logic, hoặc một số phần chưa được ôn luyện kỹ. Đây là điểm khởi đầu tốt để cải thiện.`);
+  // ─── Đánh giá tổng quan ───
+  if (pct >= 85) lines.push(`${name} đã xuất sắc hoàn thành bài kiểm tra ${examName} (Mã đề: ${EXAM_CODES[selectedSet]}) với ${correctCount}/${total} câu đúng (${pct}%). IQ ước tính ${iq} cho thấy năng lực phân tích và xử lý thông tin ở mức rất cao so với mặt bằng chung.`);
+  else if (pct >= 70) lines.push(`${name} hoàn thành bài ${examName} với ${correctCount}/${total} câu đúng (${pct}%) — kết quả khá tốt. IQ ước tính ${iq} phản ánh nền tảng tư duy logic vững chắc, với khả năng nhận diện quy luật và suy luận có hệ thống.`);
+  else if (pct >= 50) lines.push(`${name} trả lời đúng ${correctCount}/${total} câu (${pct}%) trong bài ${examName} — ở mức trung bình. IQ ước tính ${iq} cho thấy tư duy logic đang phát triển, có tiềm năng cải thiện đáng kể qua luyện tập.`);
+  else lines.push(`${name} trả lời đúng ${correctCount}/${total} câu (${pct}%) trong bài ${examName}. Đây là điểm khởi đầu — với luyện tập thêm, kết quả sẽ cải thiện rõ rệt.`);
 
+  // ─── Phân tích điểm mạnh ───
   if (strong.length > 0) {
     const sn = strong.map(s => `${s.name} (${s.pct}%)`).join(", ");
-    lines.push(`Điểm mạnh: ${name} thể hiện rất tốt ở ${sn}. ` + (strong.some(s => s.name === "Toán Hình") ? "Khả năng nhận dạng hình học và tư duy không gian là lợi thế hiếm có." : strong.some(s => s.name === "Chuyên đề") ? "Khả năng nắm bắt nguyên lý Dirichlet và tư duy tổ hợp đáng ghi nhận." : "Khả năng nhận diện quy luật số học và suy luận logic có cơ sở tốt."));
+    const tip = strong.some(s => s.name.includes("Hình")) ? "Tư duy không gian và nhận dạng hình học là thế mạnh đặc biệt."
+      : strong.some(s => s.name.includes("Xác suất") || s.name.includes("Tổ hợp")) ? "Tư duy tổ hợp-xác suất là lợi thế trong phân tích định lượng."
+      : strong.some(s => s.name.includes("Logic")) ? "Tư duy phân tích và suy luận logic chặt chẽ — rất có giá trị trong môi trường làm việc."
+      : "Khả năng nhận diện quy luật số học và tư duy có hệ thống.";
+    lines.push(`✅ Điểm mạnh nổi bật: ${sn}. ${tip}`);
   }
 
+  // ─── Điểm cần cải thiện ───
   if (weak.length > 0) {
     const wn = weak.map(s => `${s.name} (${s.pct}%)`).join(", ");
-    lines.push(`Cần cải thiện: ${wn}. ` + (weak.some(s => s.name === "Toán Hình") ? "Luyện tập nhận dạng quy luật thị giác — thử các bộ đề IQ trực quan để tăng tốc độ xử lý hình ảnh." : "Ôn lại phương pháp tiếp cận và chiến thuật loại trừ khi chưa chắc đáp án."));
+    const tip = weak.some(s => s.name.includes("Hình")) ? "Luyện tập nhận dạng hình học và tư duy không gian qua các bài IQ trực quan."
+      : weak.some(s => s.name.includes("Xác suất")) ? "Ôn lại công thức xác suất cơ bản và kỹ thuật đếm tổ hợp."
+      : weak.some(s => s.name.includes("Logic")) ? "Thực hành các bài suy luận logic — chú ý phân biệt điều kiện cần và điều kiện đủ."
+      : "Ôn lại và thử luyện thêm các dạng câu hỏi tương tự.";
+    lines.push(`📌 Cần cải thiện: ${wn}. ${tip}`);
   } else if (soSo.length > 0) {
     const sn = soSo.map(s => `${s.name} (${s.pct}%)`).join(", ");
-    lines.push(`Các phần ${sn} ổn định — tập trung đọc kỹ đề để cải thiện thêm.`);
+    lines.push(`📊 Các phần ${sn} đang ở mức ổn định — tập trung đọc kỹ đề và tránh bẫy suy luận để nâng cao hơn nữa.`);
   }
 
-  if (skipped > 5) lines.push(`${name} bỏ qua ${skipped} câu — quản lý thời gian là điểm cần chú ý. Luyện kỹ thuật "đánh nhanh rồi quay lại" để không bỏ trống câu nào.`);
-  else if (skipped > 0) lines.push(`Có ${skipped} câu bị bỏ qua — lần tới hãy đoán có cơ sở thay vì bỏ trống.`);
-  else lines.push(`${name} trả lời đầy đủ tất cả 40 câu — kỹ năng quản lý thời gian tốt là lợi thế lớn khi thi thật.`);
+  // ─── Gợi ý nghề nghiệp ───
+  const careerMap = [
+    { cond: iq >= 125, text: "Với chỉ số IQ cao, bạn có tiềm năng xuất sắc ở các vị trí đòi hỏi tư duy phân tích chuyên sâu: kỹ thuật phần mềm, khoa học dữ liệu, nghiên cứu, hoặc tài chính định lượng." },
+    { cond: iq >= 110 && strong.some(s => s.name.includes("Logic")), text: "Tư duy logic mạnh kết hợp IQ tốt phù hợp với: phân tích dữ liệu, quản lý dự án công nghệ, tư vấn chiến lược hoặc kiểm toán." },
+    { cond: iq >= 110 && strong.some(s => s.name.includes("Hình")), text: "Khả năng tư duy không gian tốt phù hợp với: thiết kế kỹ thuật, kiến trúc, đồ họa hoặc các ngành kỹ thuật cơ học." },
+    { cond: iq >= 95, text: "Với năng lực tư duy tốt, bạn phù hợp với các vị trí đòi hỏi kỹ năng phân tích: kế toán, marketing data, quản lý vận hành hoặc hành chính cấp cao." },
+  ];
+  const career = careerMap.find(c => c.cond);
+  if (career) lines.push(`💼 Gợi ý định hướng: ${career.text}`);
+
+  // ─── Quản lý thời gian ───
+  if (skipped > 5) lines.push(`⏱️ ${name} bỏ qua ${skipped} câu — quản lý thời gian là điểm cần chú ý. Luyện kỹ thuật "đánh nhanh rồi quay lại" để không bỏ trống câu nào.`);
+  else if (skipped > 0) lines.push(`💡 Có ${skipped} câu bị bỏ qua — lần tới hãy đoán có cơ sở thay vì để trống, vì mỗi câu trả lời đều có thể tạo thêm điểm.`);
+  else lines.push(`⏱️ ${name} trả lời đầy đủ tất cả ${total} câu — kỹ năng quản lý thời gian tốt là lợi thế lớn khi thi thật.`);
 
   return lines;
 }
@@ -57,7 +94,7 @@ function generateAIFeedback(answers: Record<number, string | null>, correctCount
 // ── Result Page ────────────────────────────────────────────────────────────────
 
 export default function ResultPage() {
-  const { status, answers, userInfo, clearQuiz } = useQuiz();
+  const { status, answers, userInfo, clearQuiz, currentQuestions, selectedSet } = useQuiz();
   const sentRef = useRef(false);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
 
@@ -66,17 +103,18 @@ export default function ResultPage() {
     if (status === "running") navigate("q/1");
   }, [status]);
 
-  const correctCount = QUESTIONS.reduce((acc, q) => answers[q.id] === decodeAnswer(q) ? acc + 1 : acc, 0);
-  const total = QUESTIONS.length;
+  const correctCount = currentQuestions.reduce((acc, q) => answers[q.id] === decodeAnswer(q) ? acc + 1 : acc, 0);
+  const total = currentQuestions.length;
   const percent = Math.round((correctCount / total) * 100);
   const score10 = ((correctCount / total) * 10).toFixed(2);
-  const iq = calcIQ(answers);
+  const iq = calcIQ(answers, currentQuestions);
   const { label: iqLabelText, color: iqColor } = iqLabel(iq);
   const emoji = percent >= 80 ? "🎉" : percent >= 60 ? "👍" : "📚";
-  const aiFeedback = generateAIFeedback(answers, correctCount, iq, userInfo?.name);
+  const examCode = EXAM_CODES[selectedSet];
+  const aiFeedback = generateAIFeedback(answers, correctCount, iq, currentQuestions, selectedSet, userInfo?.name);
 
   // Section stats for radar-style breakdown
-  const sectionStats = buildSectionStats(answers);
+  const sectionStats = buildSectionStats(answers, currentQuestions);
 
   // Auto-send to Lark webhook only (no Firebase)
   useEffect(() => {
@@ -101,6 +139,7 @@ export default function ResultPage() {
         so_diem: `${score10}/10 (${correctCount}/${total} câu đúng)`,
         iq_uoc_tinh: iq,
         danh_gia_ai: aiText,
+        ma_de: examCode,
       }),
       5000,
       false,
@@ -149,7 +188,7 @@ export default function ResultPage() {
                 👤 <strong>{userInfo.name}</strong> · {userInfo.phone} · {userInfo.email}
               </div>
             )}
-            <p className="result-subtitle">Toán Logic · 40 câu · 30 phút</p>
+            <p className="result-subtitle">{EXAM_NAMES[selectedSet]} · {total} câu · 30 phút · <strong style={{color:"var(--accent)"}}>{examCode}</strong></p>
             <div className="send-status">
               {sendStatus === "sending" && <span className="tag-sending">⏳ Đang gửi kết quả đến KAIpany...</span>}
               {sendStatus === "ok" && <span className="tag-sent">✅ Kết quả đã được ghi nhận</span>}
@@ -261,7 +300,7 @@ export default function ResultPage() {
                 <tr><th>#</th><th>Phần</th><th>Đã chọn</th><th>Kết quả</th></tr>
               </thead>
               <tbody>
-                {QUESTIONS.map(q => {
+                {currentQuestions.map(q => {
                   const chosen = answers[q.id] ?? null;
                   const isCorrect = chosen === decodeAnswer(q);
                   const isSkipped = chosen === null;

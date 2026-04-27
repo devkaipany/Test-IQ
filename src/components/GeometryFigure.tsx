@@ -75,10 +75,10 @@ function TriangleXorSquare({ x0, y0, size, bits, strokeW }: TriXorProps) {
   const [top, right, bottom, left] = bits;
 
   const tris = [
-    top    ? `${x0},${y0} ${x0 + size},${y0} ${cx},${cy}` : null,
-    right  ? `${x0 + size},${y0} ${x0 + size},${y0 + size} ${cx},${cy}` : null,
+    top ? `${x0},${y0} ${x0 + size},${y0} ${cx},${cy}` : null,
+    right ? `${x0 + size},${y0} ${x0 + size},${y0 + size} ${cx},${cy}` : null,
     bottom ? `${x0 + size},${y0 + size} ${x0},${y0 + size} ${cx},${cy}` : null,
-    left   ? `${x0},${y0 + size} ${x0},${y0} ${cx},${cy}` : null,
+    left ? `${x0},${y0 + size} ${x0},${y0} ${cx},${cy}` : null,
   ];
 
   return (
@@ -221,8 +221,8 @@ function Q25Main() {
                 {isQ
                   ? <QuestionTile x={x} y={y} w={TW} h={TH} />
                   : <CircleNeedle cx={cx} cy={cy} r={62 * scale}
-                      angleDeg={ang} dotPos="top"
-                      strokeW={5} needleW={10} dotR={9} />
+                    angleDeg={ang} dotPos="top"
+                    strokeW={5} needleW={10} dotR={9} />
                 }
               </g>
             );
@@ -376,7 +376,7 @@ function Q27Main() {
                 {isQ
                   ? <QuestionTile x={x} y={y} w={TW} h={TH} />
                   : <ArrowTile x0={x} y0={y} size={Math.min(TW, TH) - 10} rx={22}
-                      dir={cell as Dir} strokeW={2} />
+                    dir={cell as Dir} strokeW={2} />
                 }
               </g>
             );
@@ -429,8 +429,8 @@ function Q28Main() {
                 {isQ
                   ? <QuestionTile x={x} y={y} w={TW} h={TH} />
                   : <CornerFillTile x0={x + 5} y0={y + 5}
-                      size={Math.min(TW, TH) - 10} rx={22}
-                      corner={cell as Corner} strokeW={2} />
+                    size={Math.min(TW, TH) - 10} rx={22}
+                    corner={cell as Corner} strokeW={2} />
                 }
               </g>
             );
@@ -487,8 +487,8 @@ function Q29Main() {
                 {isQ
                   ? <QuestionTile x={x} y={y} w={TW} h={TH} />
                   : <CircleNeedle cx={cx} cy={cy} r={62 * scale}
-                      angleDeg={0} dotPos={cell as "top" | "right" | "bottom" | "left"}
-                      strokeW={5} needleW={10} dotR={9} />
+                    angleDeg={0} dotPos={cell as "top" | "right" | "bottom" | "left"}
+                    strokeW={5} needleW={10} dotR={9} />
                 }
               </g>
             );
@@ -547,8 +547,8 @@ function Q30Main() {
                 {isQ
                   ? <QuestionTile x={x} y={y} w={TW} h={TH} />
                   : <CircleNeedle cx={cx} cy={cy} r={62 * scale}
-                      angleDeg={cell as number} dotPos="top"
-                      strokeW={5} needleW={10} dotR={9} />
+                    angleDeg={cell as number} dotPos="top"
+                    strokeW={5} needleW={10} dotR={9} />
                 }
               </g>
             );
@@ -642,8 +642,8 @@ function Q32Main() {
               {isQ
                 ? <QuestionTile x={x} y={y} w={TW} h={TH} />
                 : <CornerFillTile x0={x + 5} y0={y + 5}
-                    size={Math.min(TW, TH) - 10} rx={22}
-                    corner={corner as Corner} strokeW={2} />
+                  size={Math.min(TW, TH) - 10} rx={22}
+                  corner={corner as Corner} strokeW={2} />
               }
             </g>
           );
@@ -708,8 +708,8 @@ function Q41Main() {
                 {isQ
                   ? <QuestionTile x={x} y={y} w={TW} h={TH} />
                   : <CornerFillTile x0={x + 5} y0={y + 5}
-                      size={Math.min(TW, TH) - 10} rx={22}
-                      corner={cell as Corner} strokeW={2} />
+                    size={Math.min(TW, TH) - 10} rx={22}
+                    corner={cell as Corner} strokeW={2} />
                 }
               </g>
             );
@@ -730,19 +730,253 @@ function Q41Option({ optionKey }: { optionKey: GeoKey }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Q131 — Square 6cm, cut 4 corners (right isosceles, leg=1cm)
+// Shows the octagon result; options are text, so no option renderer needed
+// ═══════════════════════════════════════════════════════════════════════════
+
+function Q131Main() {
+  // Square 6cm → octagon after cutting 4 corners (leg=1cm)
+  // Scale: 1cm = 50px, square = 300px
+  const S = 300, leg = 50, cx = 30, cy = 30;
+  const pts2 = [
+    [cx + leg, cy], [cx + S - leg, cy],
+    [cx + S, cy + leg], [cx + S, cy + S - leg],
+    [cx + S - leg, cy + S], [cx + leg, cy + S],
+    [cx, cy + S - leg], [cx, cy + leg],
+  ].map(([x, y]) => `${x},${y}`).join(" ");
+  return (
+    <svg viewBox="0 0 380 380" width="100%" style={{ maxWidth: 380, background: "white", borderRadius: 18 }}>
+      {/* Original square outline */}
+      <rect x={30} y={30} width={300} height={300} fill="none" stroke="#cbd5e1" strokeWidth={2} strokeDasharray="8 6" />
+      {/* Cut triangles (highlighted) */}
+      {[
+        `${cx},${cy} ${cx + leg},${cy} ${cx},${cy + leg}`,
+        `${cx + S - leg},${cy} ${cx + S},${cy} ${cx + S},${cy + leg}`,
+        `${cx + S},${cy + S - leg} ${cx + S},${cy + S} ${cx + S - leg},${cy + S}`,
+        `${cx},${cy + S - leg} ${cx + leg},${cy + S} ${cx},${cy + S}`,
+      ].map((p, i) => <polygon key={i} points={p} fill="#fca5a5" opacity={0.6} />)}
+      {/* Octagon */}
+      <polygon points={pts2} fill="#dbeafe" stroke="#3b82f6" strokeWidth={3} />
+      {/* Dimension labels */}
+      <text x={180} y={22} textAnchor="middle" fontSize={14} fill="#64748b">6cm</text>
+      <text x={370} y={185} textAnchor="middle" fontSize={14} fill="#64748b">6cm</text>
+      <text x={60} y={20} textAnchor="middle" fontSize={12} fill="#ef4444">1</text>
+      <text x={17} y={60} textAnchor="middle" fontSize={12} fill="#ef4444">1</text>
+      <text x={180} y={200} textAnchor="middle" fontSize={16} fontWeight={700} fill="#1e40af">?</text>
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Q133 — Circle inscribed in square (side 4cm)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function Q133Main() {
+  return (
+    <svg viewBox="0 0 320 320" width="100%" style={{ maxWidth: 320, background: "white", borderRadius: 18 }}>
+      <rect x={30} y={30} width={260} height={260} fill="#fef9c3" stroke="#92400e" strokeWidth={3} />
+      <circle cx={160} cy={160} r={130} fill="#bfdbfe" stroke="#1d4ed8" strokeWidth={3} />
+      {/* Shaded corners */}
+      <rect x={30} y={30} width={260} height={260} fill="#fca5a5" opacity={0.35} />
+      <circle cx={160} cy={160} r={130} fill="white" opacity={0.9} />
+      <circle cx={160} cy={160} r={130} fill="#bfdbfe" opacity={0.5} stroke="#1d4ed8" strokeWidth={3} />
+      {/* Labels */}
+      <text x={160} y={27} textAnchor="middle" fontSize={16} fill="#78350f" fontWeight={700}>4cm</text>
+      <text x={17} y={165} textAnchor="middle" fontSize={16} fill="#78350f" fontWeight={700}>4cm</text>
+      <text x={160} y={168} textAnchor="middle" fontSize={14} fill="#1d4ed8">r = 2cm</text>
+      <text x={55} y={75} textAnchor="middle" fontSize={16} fill="#ef4444" fontWeight={700}>?</text>
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Q134 — Paper folding: square → fold along diagonal → cut apex → unfold
+// ═══════════════════════════════════════════════════════════════════════════
+
+function Q134Main() {
+  return (
+    <svg viewBox="0 0 760 280" width="100%" style={{ maxWidth: 760 }}>
+      {/* Step 1: Original square */}
+      <g transform="translate(20,30)">
+        <rect width={180} height={180} fill="#fef9c3" stroke="#92400e" strokeWidth={3} />
+        <text x={90} y={200} textAnchor="middle" fontSize={14} fill="#64748b">Hình vuông</text>
+      </g>
+      {/* Arrow 1 */}
+      <text x={220} y={125} fontSize={28} fill="#6366f1">→</text>
+      {/* Step 2: Folded triangle */}
+      <g transform="translate(255,30)">
+        <polygon points="0,180 180,180 180,0" fill="#dbeafe" stroke="#1d4ed8" strokeWidth={3} />
+        <line x1={0} y1={180} x2={180} y2={0} stroke="#94a3b8" strokeWidth={2} strokeDasharray="8 5" />
+        {/* Cut mark at apex */}
+        <polygon points="180,0 148,0 180,32" fill="#fca5a5" stroke="#ef4444" strokeWidth={2} />
+        <text x={80} y={200} textAnchor="middle" fontSize={14} fill="#64748b">Gấp đôi & cắt</text>
+      </g>
+      {/* Arrow 2 */}
+      <text x={455} y={125} fontSize={28} fill="#6366f1">→</text>
+      {/* Step 3: Unfolded with rhombus hole */}
+      <g transform="translate(490,30)">
+        <rect width={180} height={180} fill="#fef9c3" stroke="#92400e" strokeWidth={3} />
+        {/* Rhombus hole at center */}
+        <polygon points="90,55 125,90 90,125 55,90" fill="white" stroke="#ef4444" strokeWidth={2.5} strokeDasharray="6 4" />
+        <text x={90} y={200} textAnchor="middle" fontSize={14} fill="#64748b">Mở ra — lỗ = ?</text>
+      </g>
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Q135 — 3×3×3 cube painting: show which pieces have 2 painted faces
+// ═══════════════════════════════════════════════════════════════════════════
+
+function Q135Main() {
+  const S = 60, gap = 4;
+  const colors = { corner: "#f87171", edge: "#4ade80", face: "#60a5fa", inner: "#e2e8f0" };
+  return (
+    <svg viewBox="0 0 540 260" width="100%" style={{ maxWidth: 540 }}>
+      {/* Top view grid */}
+      <text x={90} y={20} textAnchor="middle" fontSize={13} fill="#64748b" fontWeight={600}>Nhìn từ trên</text>
+      {[0, 1, 2].map(r => [0, 1, 2].map(c => {
+        const isCorner = (r === 0 || r === 2) && (c === 0 || c === 2);
+        const isEdge = !isCorner && (r === 0 || r === 2 || c === 0 || c === 2);
+        const fill = isCorner ? colors.corner : isEdge ? colors.edge : colors.face;
+        return <rect key={`${r}-${c}`} x={20 + c * (S + gap)} y={30 + r * (S + gap)} width={S} height={S} rx={8} fill={fill} stroke="#fff" strokeWidth={2} />;
+      }))}
+      {/* Legend */}
+      <g transform="translate(220,30)">
+        {[
+          { c: colors.corner, label: "3 mặt sơn (góc): 8 khối", y: 0 },
+          { c: colors.edge, label: "2 mặt sơn (cạnh): 12 khối ✓", y: 40 },
+          { c: colors.face, label: "1 mặt sơn (mặt): 6 khối", y: 80 },
+          { c: colors.inner, label: "0 mặt sơn (trong): 1 khối", y: 120 },
+        ].map(({ c, label, y }) => (
+          <g key={y} transform={`translate(0,${y})`}>
+            <rect width={28} height={28} rx={6} fill={c} />
+            <text x={36} y={19} fontSize={13} fill="#334155">{label}</text>
+          </g>
+        ))}
+        <text x={0} y={185} fontSize={14} fontWeight={800} fill="#4ade80">→ Đáp án: 12 khối có 2 mặt sơn</text>
+      </g>
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Q136 — Symmetry axes: show 6 shapes with axis counts
+// ═══════════════════════════════════════════════════════════════════════════
+
+function Q136Main() {
+  const shapes = [
+    { label: "Chữ nhật", axes: 2 },
+    { label: "Hình thoi", axes: 2 },
+    { label: "Hình vuông", axes: 4 },
+    { label: "Tam giác đều", axes: 3 },
+    { label: "Thang cân", axes: 1 },
+    { label: "Bình hành", axes: 0 },
+  ];
+  return (
+    <svg viewBox="0 0 750 220" width="100%" style={{ maxWidth: 750 }}>
+      {shapes.map(({ label, axes }, i) => {
+        const x = 15 + i * 122, y = 10;
+        const isMax = axes === 4;
+        return (
+          <g key={i} transform={`translate(${x},${y})`}>
+            <rect width={110} height={140} rx={14} fill={isMax ? "#f0fdf4" : "white"}
+              stroke={isMax ? "#22c55e" : "#e2e8f0"} strokeWidth={isMax ? 3 : 1.5} />
+            {/* Simple shape silhouette */}
+            {i === 0 && <rect x={15} y={15} width={80} height={60} fill="#bfdbfe" rx={4} />}
+            {i === 1 && <polygon points="55,10 95,50 55,90 15,50" fill="#fde68a" />}
+            {i === 2 && <rect x={15} y={10} width={80} height={80} fill="#c4b5fd" rx={4} />}
+            {i === 3 && <polygon points="55,10 95,90 15,90" fill="#6ee7b7" />}
+            {i === 4 && <polygon points="20,90 90,90 70,10 40,10" fill="#fed7aa" />}
+            {i === 5 && <polygon points="5,90 85,90 105,10 25,10" fill="#e2e8f0" />}
+            {/* Axis lines */}
+            {axes > 0 && Array.from({ length: axes }).map((_, j) => {
+              const ang = (j * 180 / axes) * Math.PI / 180;
+              const cx2 = 55, cy2 = 50, len = 40;
+              return <line key={j}
+                x1={cx2 - Math.cos(ang) * len} y1={cy2 - Math.sin(ang) * len}
+                x2={cx2 + Math.cos(ang) * len} y2={cy2 + Math.sin(ang) * len}
+                stroke="#ef4444" strokeWidth={1.5} strokeDasharray="5 3" />;
+            })}
+            <text x={55} y={115} textAnchor="middle" fontSize={11} fill="#334155">{label}</text>
+            <text x={55} y={133} textAnchor="middle" fontSize={13} fontWeight={800}
+              fill={isMax ? "#16a34a" : "#64748b"}>{axes} trục{isMax ? " ✓" : ""}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Q138 — 3D projections: top=circle, side=triangle → cone
+// ═══════════════════════════════════════════════════════════════════════════
+
+function Q138Main() {
+  return (
+    <svg viewBox="0 0 600 260" width="100%" style={{ maxWidth: 600 }}>
+      {/* Top view */}
+      <g transform="translate(30,20)">
+        <rect width={200} height={200} rx={16} fill="white" stroke="#e2e8f0" strokeWidth={2} />
+        <text x={100} y={22} textAnchor="middle" fontSize={14} fill="#64748b" fontWeight={600}>Nhìn từ trên ↓</text>
+        <circle cx={100} cy={115} r={70} fill="#bfdbfe" stroke="#1d4ed8" strokeWidth={3} />
+      </g>
+      {/* Side view */}
+      <g transform="translate(270,20)">
+        <rect width={200} height={200} rx={16} fill="white" stroke="#e2e8f0" strokeWidth={2} />
+        <text x={100} y={22} textAnchor="middle" fontSize={14} fill="#64748b" fontWeight={600}>Nhìn từ bên →</text>
+        <polygon points="100,35 175,175 25,175" fill="#fde68a" stroke="#92400e" strokeWidth={3} />
+      </g>
+      {/* Result */}
+      <text x={510} y={115} textAnchor="middle" fontSize={36} fill="#6366f1">?</text>
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Q139 — Count triangles: big triangle divided by midpoints into 4 small ones
+// ═══════════════════════════════════════════════════════════════════════════
+
+function Q139Main() {
+  // Big triangle vertices
+  const A = { x: 380, y: 30 }, B = { x: 60, y: 350 }, C = { x: 700, y: 350 };
+  // Midpoints
+  const MAB = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+  const MBC = { x: (B.x + C.x) / 2, y: (B.y + C.y) / 2 };
+  const MAC = { x: (A.x + C.x) / 2, y: (A.y + C.y) / 2 };
+  const colors = ["#bfdbfe", "#fde68a", "#6ee7b7", "#fca5a5"];
+  const tris = [
+    [A, MAB, MAC], [MAB, B, MBC], [MAB, MBC, MAC], [MAC, MBC, C]
+  ];
+  function tp(pts: { x: number; y: number }[]) { return pts.map(p => `${p.x},${p.y}`).join(" "); }
+  return (
+    <svg viewBox="0 0 760 400" width="100%" style={{ maxWidth: 760 }}>
+      {tris.map((t, i) => (
+        <polygon key={i} points={tp(t)} fill={colors[i]} stroke="#334155" strokeWidth={2.5} opacity={0.85} />
+      ))}
+      {/* Big triangle outline */}
+      <polygon points={tp([A, B, C])} fill="none" stroke="#1e293b" strokeWidth={3.5} />
+      {/* Label each small triangle */}
+      {tris.map((t, i) => {
+        const cx = (t[0].x + t[1].x + t[2].x) / 3, cy = (t[0].y + t[1].y + t[2].y) / 3;
+        return <text key={i} x={cx} y={cy + 6} textAnchor="middle" fontSize={22} fontWeight={700} fill="#1e293b">△</text>;
+      })}
+      {/* Big triangle label */}
+      <text x={380} y={390} textAnchor="middle" fontSize={15} fill="#64748b">4 tam giác nhỏ + 1 tam giác lớn = ?</text>
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Public API
 // ═══════════════════════════════════════════════════════════════════════════
 
 const MAIN_RENDERERS: Record<number, () => React.ReactElement> = {
-  25: Q25Main,
-  26: Q26Main,
-  27: Q27Main,
-  28: Q28Main,
-  29: Q29Main,
-  30: Q30Main,
-  31: Q31Main,
-  32: Q32Main,
-  41: Q41Main, // ← câu hình template (id=41)
+  25: Q25Main, 26: Q26Main, 27: Q27Main, 28: Q28Main,
+  29: Q29Main, 30: Q30Main, 31: Q31Main, 32: Q32Main,
+  // SET2 geometry
+  131: Q131Main, 133: Q133Main, 134: Q134Main,
+  135: Q135Main, 136: Q136Main, 138: Q138Main, 139: Q139Main,
 };
 
 const OPTION_RENDERERS: Record<number, (k: GeoKey) => React.ReactElement> = {
@@ -754,7 +988,7 @@ const OPTION_RENDERERS: Record<number, (k: GeoKey) => React.ReactElement> = {
   30: (k) => <Q30Option optionKey={k} />,
   31: (k) => <Q31Option optionKey={k} />,
   32: (k) => <Q32Option optionKey={k} />,
-  41: (k) => <Q41Option optionKey={k} />, // ← câu hình template (id=41)
+  // SET2 questions — options are text, no image renderer needed
 };
 
 export function GeometryOption({ questionId, optionKey }: { questionId: number; optionKey: GeoKey }) {
@@ -781,3 +1015,4 @@ export default function GeometryFigure({
   }
   return null;
 }
+
