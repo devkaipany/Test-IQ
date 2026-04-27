@@ -663,71 +663,8 @@ function Q32Option({ optionKey }: { optionKey: GeoKey }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Q41 — [TEMPLATE] Thay bằng loại hình bạn muốn (id phải khớp questions.ts)
+// Q41 — (reserved, not used — add here if you create a question with id=41)
 // ═══════════════════════════════════════════════════════════════════════════
-// Ví dụ dưới dùng CornerFillTile (tô góc). Bạn có thể thay bằng:
-//   - ArrowTile         → đổi kiểu data: Dir ("up"|"right"|"down"|"left")
-//   - CircleNeedle      → đổi kiểu data: NeedleKind hoặc number (góc độ)
-//   - TriangleXorSquare → đổi kiểu data: Bits4
-// ─────────────────────────────────────────────────────────────────────────
-//
-// BƯỚC 1: Đặt ma trận 3×3, ô cuối là "?"
-//         Đáp án đúng tương ứng sẽ đặt vào Q41_OPTIONS bên dưới.
-//
-const Q41_MATRIX: (Corner | "?")[][] = [
-  ["tl", "tr", "br"],
-  ["bl", "tl", "tr"],
-  ["br", "bl", "?"],   // ← ô "?" là câu hỏi
-];
-
-//
-// BƯỚC 2: Đặt 6 đáp án A–F, 1 trong số đó là đáp án đúng
-//         (khớp với _c trong questions.ts)
-//         id=41, đáp án="A" → _c = String.fromCharCode(65 ^ (41%7+1)) = "F"
-//
-const Q41_OPTIONS: Record<GeoKey, Corner> = {
-  A: "bl",   // ← đây là đáp án đúng (ví dụ)
-  B: "tr",
-  C: "tl",
-  D: "br",
-  E: "none",
-  F: "tr",
-};
-
-function Q41Main() {
-  const TW = 200, TH = 160;
-  return (
-    <svg viewBox="0 0 760 580" width="100%" style={{ maxWidth: 760 }}>
-      <g transform="translate(80,40)">
-        {Q41_MATRIX.map((row, r) =>
-          row.map((cell, c) => {
-            const x = c * 210, y = r * 175;
-            const isQ = cell === "?";
-            return (
-              <g key={`${r}-${c}`}>
-                {isQ
-                  ? <QuestionTile x={x} y={y} w={TW} h={TH} />
-                  : <CornerFillTile x0={x + 5} y0={y + 5}
-                    size={Math.min(TW, TH) - 10} rx={22}
-                    corner={cell as Corner} strokeW={2} />
-                }
-              </g>
-            );
-          })
-        )}
-      </g>
-    </svg>
-  );
-}
-
-function Q41Option({ optionKey }: { optionKey: GeoKey }) {
-  const corner = Q41_OPTIONS[optionKey];
-  return (
-    <svg viewBox="0 0 240 180" width="100%" style={{ maxWidth: 240 }}>
-      <CornerFillTile x0={60} y0={22} size={120} rx={24} corner={corner} strokeW={2} />
-    </svg>
-  );
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Q131 — Square 6cm, cut 4 corners (right isosceles, leg=1cm)
