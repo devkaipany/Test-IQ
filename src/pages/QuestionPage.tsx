@@ -8,6 +8,8 @@ import GeometryFigure, { GeometryOption } from "../components/GeometryFigure";
 import type { GeoKey } from "../components/GeometryFigure";
 
 const OPTION_KEYS: OptionKey[] = ["A", "B", "C", "D", "E", "F"];
+// SET1 geometry question ids that have SVG option renderers
+const GEO_OPTION_IDS = new Set([25, 26, 27, 28, 29, 30, 31, 32]);
 
 interface Props {
   questionId: number;
@@ -30,7 +32,8 @@ export default function QuestionPage({ questionId: pos }: Props) {
   const selected = answers[actualId] ?? null;
   const isFigure  = question.hasFigure === true;
   const isImage   = !!question.imageQuestion;
-  const isVisual  = isFigure || isImage;
+  // Chỉ dùng 3-col grid khi thực sự có SVG option renderer (SET1: id 25-32)
+  const hasGeoOptions = isFigure && !isImage && GEO_OPTION_IDS.has(question.id);
   const isLast    = pos === totalQ;
   const totalAnswered = Object.values(answers).filter(v => v !== null).length;
 
@@ -137,7 +140,7 @@ export default function QuestionPage({ questionId: pos }: Props) {
         {/* Answer cards */}
         <div
           className="options-grid"
-          style={isVisual ? { gridTemplateColumns: "repeat(3, 1fr)" } : undefined}
+          style={(isImage || hasGeoOptions) ? { gridTemplateColumns: "repeat(3, 1fr)" } : undefined}
         >
           {OPTION_KEYS.map(key => {
             const isSelected = selected === key;
@@ -145,17 +148,24 @@ export default function QuestionPage({ questionId: pos }: Props) {
               <div
                 key={key}
                 className={`option-card${
-                  isFigure ? " figure-card" : ""
-                }${isImage ? " figure-card" : ""}${isSelected ? " selected" : ""}`}
+                  (hasGeoOptions || isImage) ? " figure-card" : ""
+                }${isSelected ? " selected" : ""}`}
                 onClick={() => handleSelect(key)}
               >
                 {/* SVG option */}
-                {isFigure && !isImage && (
-                  <>
-                    <div className="option-badge">{key}</div>
-                    <GeometryOption questionId={question.id} optionKey={key as GeoKey} />
-                  </>
-                )}
+                {isFigure && !isImage && (() => {
+                  const geoEl = GeometryOption({ questionId: question.id, optionKey: key as GeoKey });
+                  return (
+                    <>
+                      <span className="option-badge">{key}</span>
+                      {geoEl ?? (
+                        <span style={{ fontSize: "0.95rem", textAlign: "center", padding: "0 4px" }}>
+                          {question.options[key]}
+                        </span>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {/* Ảnh ngoài option */}
                 {isImage && (
